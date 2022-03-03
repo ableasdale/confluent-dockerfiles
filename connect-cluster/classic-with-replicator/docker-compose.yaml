@@ -58,9 +58,9 @@ services:
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
 
   kafka-connect-01:
-    image: confluentinc/cp-enterprise-replicator:6.2.0
-    # TODO - not working image: confluentinc/cp-enterprise-replicator:7.0.0
+    image: confluentinc/cp-enterprise-replicator:7.0.1
     container_name: kafka-connect-01
+    restart: always
     depends_on:
       - zookeeper
       - kafka
@@ -91,9 +91,9 @@ services:
       CONNECT_PLUGIN_PATH: '/usr/share/java'
 
   kafka-connect-02:
-    image: confluentinc/cp-enterprise-replicator:6.2.0
-    # TODO - not working image: confluentinc/cp-enterprise-replicator:7.0.0
+    image: confluentinc/cp-enterprise-replicator:7.0.1
     container_name: kafka-connect-02
+    restart: always
     depends_on:
       - zookeeper
       - kafka
