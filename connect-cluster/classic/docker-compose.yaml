@@ -88,30 +88,6 @@ services:
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       CONNECT_PLUGIN_PATH: '/usr/share/java'
-    volumes:
-      - db-leach:/db-leach/
-    #   - /my/local/folder/with/jdbc-driver.jar:/usr/share/java/kafka-connect-jdbc/jars/
-    command: 
-      - /bin/bash
-      - -c 
-      - |
-        mkdir -p /usr/share/java/kafka-connect-jdbc
-        # JDBC Drivers
-        # ------------
-        # MySQL
-        cd /usr/share/java/kafka-connect-jdbc/
-        # See https://dev.mysql.com/downloads/connector/j/
-        wget https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.23.tar.gz
-        tar xfz mysql-connector-java-8.0.23.tar.gz
-        # MS SQL
-        cd /usr/share/java/kafka-connect-jdbc/
-        # See https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc/7.0.0.jre8
-        curl https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/7.0.0.jre8/mssql-jdbc-7.0.0.jre8.jar --output mssql-jdbc-7.0.0.jre8.jar
-        # # Oracle
-        cp /db-leach/jdbc/lib/ojdbc8.jar /usr/share/java/kafka-connect-jdbc
-        # Now launch Kafka Connect
-        sleep infinity &
-        /etc/confluent/docker/run 
 
   kafka-connect-02:
     image: confluentinc/cp-kafka-connect:7.0.1
@@ -141,33 +117,9 @@ services:
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       CONNECT_PLUGIN_PATH: '/usr/share/java'
-    volumes:
-      - db-leach:/db-leach/
-    #   - /my/local/folder/with/jdbc-driver.jar:/usr/share/java/kafka-connect-jdbc/jars/
-    command: 
-      - /bin/bash
-      - -c 
-      - |
-        mkdir -p /usr/share/java/kafka-connect-jdbc
-        # JDBC Drivers
-        # ------------
-        # MySQL
-        cd /usr/share/java/kafka-connect-jdbc/
-        # See https://dev.mysql.com/downloads/connector/j/
-        wget https://cdn.mysql.com/Downloads/Connector-J/mysql-connector-java-8.0.23.tar.gz
-        tar xfz mysql-connector-java-8.0.23.tar.gz
-        # MS SQL
-        cd /usr/share/java/kafka-connect-jdbc/
-        # See https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc/7.0.0.jre8
-        curl https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/7.0.0.jre8/mssql-jdbc-7.0.0.jre8.jar --output mssql-jdbc-7.0.0.jre8.jar
-        # # Oracle
-        cp /db-leach/jdbc/lib/ojdbc8.jar /usr/share/java/kafka-connect-jdbc
-        # Now launch Kafka Connect
-        sleep infinity &
-        /etc/confluent/docker/run 
 
   ksqldb-server:
-    image: confluentinc/ksqldb-server:0.6.0
+    image: confluentinc/cp-ksqldb-server:7.0.1
     hostname: ksqldb-server
     container_name: ksqldb-server
     depends_on:
@@ -189,80 +141,12 @@ services:
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 1
 
   ksqldb-cli:
-    image: confluentinc/ksqldb-cli:0.6.0
+    image: confluentinc/cp-ksqldb-cli:7.0.1
     container_name: ksqldb-cli
     depends_on:
       - ksqldb-server
     entrypoint: /bin/sh
     tty: true
-
-# Other systems
-  mysql:
-    # *-----------------------------*
-    # To connect to the DB: 
-    #   docker-compose exec mysql bash -c 'mysql -u root -p$MYSQL_ROOT_PASSWORD'
-    # *-----------------------------*
-    image: mysql
-    container_name: mysql
-    ports:
-      - 3306:3306
-    environment:
-     - MYSQL_ROOT_PASSWORD=Admin123
-     - MYSQL_USER=connect_user
-     - MYSQL_PASSWORD=asgard
-    volumes:
-     - ./data/mysql:/docker-entrypoint-initdb.d/
-
-  postgres:
-    # *-----------------------------*
-    # To connect to the DB: 
-    #   docker-compose exec postgres bash -c 'psql -U $POSTGRES_USER $POSTGRES_DB'
-    # *-----------------------------*
-    image: postgres:11
-    container_name: postgres
-    environment:
-     - POSTGRES_USER=postgres
-     - POSTGRES_PASSWORD=postgres
-    volumes:
-     - ./data/postgres:/docker-entrypoint-initdb.d/
-
-  mssql:
-    # *-----------------------------*
-    # To connect to the DB: 
-    #   docker-compose exec mssql bash -c '/opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -U sa -P $SA_PASSWORD'
-    # *-----------------------------*
-    image: mcr.microsoft.com/mssql/server:2017-latest
-    container_name: mssql
-    environment: 
-      - SA_PASSWORD=Admin123
-      - ACCEPT_EULA=Y
-    volumes:
-     - ./data/mssql:/scripts/
-    command:
-      - /bin/bash
-      - -c 
-      - |
-        # Launch MSSQL and send to background
-        /opt/mssql/bin/sqlservr &
-        # Wait for it to be available
-        echo "Waiting for MS SQL to be available ⏳"
-        /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
-        is_up=$$?
-        while [ $$is_up -ne 0 ] ; do 
-          echo -e $$(date) 
-          /opt/mssql-tools/bin/sqlcmd -l 30 -S localhost -h-1 -V1 -U sa -P $$SA_PASSWORD -Q "SET NOCOUNT ON SELECT \"YAY WE ARE UP\" , @@servername"
-          is_up=$$?
-          sleep 5 
-        done
-
-        # Run every script in /scripts
-        # TODO set a flag so that this is only done once on creation, 
-        #      and not every time the container runs
-        for foo in /scripts/*.sql
-          do /opt/mssql-tools/bin/sqlcmd -U sa -P $$SA_PASSWORD -l 30 -e -i $$foo
-        done
-        # So that the container doesn't shut down, sleep this thread
-        sleep infinity
 
   control-center:
     image: confluentinc/cp-enterprise-control-center:7.0.1
@@ -286,7 +170,3 @@ services:
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       PORT: 9021
-
-volumes:
-    db-leach: {}
-
