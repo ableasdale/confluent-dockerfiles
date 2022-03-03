@@ -7,6 +7,11 @@ cd confluent-dockerfiles/connect-cluster/classic-with-replicator
 docker system prune -f && docker-compose up
 ```
 
+### Wait for startup
+```bash
+watch -d curl localhost:8083
+```
+
 ### Confirm the Connect Cluster is available
 
 ```bash
@@ -39,6 +44,18 @@ curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" \
 ./replicator.sh
 ```
 
+### Get the status of the replicator
+
+```bash
+curl localhost:8083/connectors/replicator/status | jq
+```
+
+### Start Producing to the topic
+
+```bash
+docker-compose exec kafka /usr/bin/kafka-console-producer --broker-list kafka:29092 --topic replicate-me
+```
+
 Open Confluent Control Centre <http:hostname:9021>
 
 ### Troubleshooting
@@ -48,4 +65,11 @@ Connect to the First Kafka Connect instance
 ```bash
 docker-compose exec connect1 bash
 ```
+
+Delete the replicator
+
+```bash
+curl -X DELETE connect1:8083/connectors/replicator
+```
+
 
