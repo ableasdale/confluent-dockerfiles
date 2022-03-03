@@ -12,9 +12,11 @@ services:
       - ksqldb-server
     environment:
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      #CONTROL_CENTER_NAME: "C3"
       CONTROL_CENTER_BOOTSTRAP_SERVERS: kafka:29092
       CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: http://connect1:8083
-      CONTROL_CENTER_CONNECT_CLUSTER: http://connect1:8083
+      #CONTROL_CENTER_CONNECT_CLUSTER: http://connect1:8083
+      #CONTROL_CENTER_CONNECT_CONNECT1_CLUSTER: https://connect1:8083
       CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
       CONTROL_CENTER_KSQL_KSQLDB1_ADVERTISED_URL: http://localhost:8088
       CONTROL_CENTER_KSQL_KSQLDB1_URL: http://ksqldb-server:8088
@@ -93,6 +95,7 @@ services:
       CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      # kafka_connect_replicator_cluster_name
     image: confluentinc/cp-enterprise-replicator:7.0.1
     ports:
       - '8083:8083'
@@ -123,6 +126,7 @@ services:
       CONNECT_PLUGIN_PATH: /usr/share/java
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor
       CONNECT_REST_ADVERTISED_HOST_NAME: connect2
+      CONNECT_REST_EXTENSION_CLASSES: io.confluent.connect.replicator.monitoring.ReplicatorMonitoringExtension
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
@@ -136,6 +140,7 @@ services:
     entrypoint: /bin/sh
     image: confluentinc/cp-ksqldb-cli:7.0.1
     tty: true
+
   ksqldb-server:
     container_name: ksqldb-server
     depends_on:
@@ -155,6 +160,22 @@ services:
     image: confluentinc/cp-ksqldb-server:7.0.1
     ports:
       - '8088:8088'
+  
+  restproxy:
+    image: confluentinc/cp-kafka-rest:7.0.1
+    restart: always
+    depends_on:
+      - kafka
+      - schema-registry
+    hostname: restproxy
+    container_name: restproxy
+    environment:
+      #KAFKA_REST_ZOOKEEPER_CONNECT=localhost:32181
+      KAFKA_REST_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_REST_LISTENERS: http://0.0.0.0:8082
+      KAFKA_REST_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+    ports: 
+      - 8082:8082
 
   schema-registry:
     container_name: schema-registry
