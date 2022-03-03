@@ -3,7 +3,7 @@
 HEADER="Content-Type: application/json"
 DATA=$( cat << EOF
 {
-  "name": "replicator-dc1-to-dc2-topic1",
+  "name": "replicator",
   "config": {
     "connector.class": "io.confluent.connect.replicator.ReplicatorSourceConnector",
     "topic.whitelist": "replicate-me",
@@ -15,7 +15,7 @@ DATA=$( cat << EOF
     "dest.kafka.bootstrap.servers": "broker:9092",
     "confluent.topic.replication.factor": 1,
     "header.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
-    "tasks.max": "1",
+    "tasks.max": "4",
     "topic.rename.format":"backup_${topic}"
   }
 }
