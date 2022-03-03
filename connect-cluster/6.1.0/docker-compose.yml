@@ -29,7 +29,7 @@ services:
       - '9092:9092'
       - '29092:29092'
     restart: always
-    
+
   connect1:
     container_name: connect1
     depends_on:
@@ -67,6 +67,7 @@ services:
     ports:
       - '8083:8083'
     restart: always
+    
   connect2:
     container_name: connect2
     depends_on:
