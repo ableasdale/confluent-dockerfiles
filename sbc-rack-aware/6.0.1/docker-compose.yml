@@ -1,0 +1,187 @@
+---
+version: '3.5'
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:6.0.1
+    hostname: zookeeper
+    container_name: zookeeper
+    restart: always
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: -Dzookeeper.4lw.commands.whitelist=*
+
+  broker1:
+    image: confluentinc/cp-server:6.0.1
+    hostname: broker1
+    container_name: broker1
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_BROKER_RACK: rack-a
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:9092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker1:9092
+
+  broker2:
+    image: confluentinc/cp-server:6.0.1
+    hostname: broker2
+    container_name: broker2
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_BROKER_RACK: rack-a
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:9192
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker2:9192
+
+  broker3:
+    image: confluentinc/cp-server:6.0.1
+    hostname: broker3
+    container_name: broker3
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_BROKER_RACK: rack-b
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker3:9292
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker3:9292
+
+  broker4:
+    image: confluentinc/cp-server:6.0.1
+    hostname: broker4
+    container_name: broker4
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 4
+      KAFKA_BROKER_RACK: rack-b
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker4:10092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker4:10092
+
+  broker5:
+    image: confluentinc/cp-server:6.0.1
+    hostname: broker5
+    container_name: broker5
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 5
+      KAFKA_BROKER_RACK: rack-c
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker5:11092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker5:11092
+
+  broker6:
+    image: confluentinc/cp-server:6.0.1
+    hostname: broker6
+    container_name: broker6
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 6
+      KAFKA_BROKER_RACK: rack-c
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker6:12092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker6:12092
+
+  # broker:
+  #   image: confluentinc/cp-server:6.0.1
+  #   hostname: broker
+  #   container_name: broker
+  #   restart: always
+  #   depends_on:
+  #     - zookeeper
+  #   ports:
+  #     - "9092:9092"
+  #     - "29092:29092"
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INT://broker:9092, PLAINTEXT_EXT://localhost:29092
+  #     KAFKA_LISTENERS: PLAINTEXT_INT://broker:9092, PLAINTEXT_EXT://broker:29092
+  #     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INT
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_EXT:PLAINTEXT,PLAINTEXT_INT:PLAINTEXT
+  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #     CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+  #     # Confluent Metrics Reporter for Control Center Cluster Monitoring
+  #     KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+  #     CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:9092
+  #     CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+  #     CONFLUENT_METRICS_ENABLE: 'true'
+  #     # for 5.4.x:
+  #     KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+  #     # for 6.0.0
+  #     KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+  #     # For Confluent Telemetry Reporter (proactive support)
+  #     # KAFKA_CONFLUENT_TELEMETRY_ENABLED: 'true'
+  #     # KAFKA_CONFLUENT_TELEMETRY_API_KEY: '<CLOUD_API_KEY>'
+  #     # KAFKA_CONFLUENT_TELEMETRY_API_SECRET: '<CLOUD_API_SECRET>'
+  #     KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+  #     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  # schema-registry:
+  #   image: confluentinc/cp-schema-registry:6.0.1
+  #   hostname: schema-registry
+  #   container_name: schema-registry
+  #   restart: always
+  #   depends_on:
+  #     - broker
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     SCHEMA_REGISTRY_HOST_NAME: schema-registry
+  #     SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+  #     SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker:9092
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:6.0.1
+    hostname: control-center
+    container_name: control-center
+    restart: always
+    depends_on:
+      - zookeeper
+      - broker1
+      - broker2
+      - broker3
+      - broker4
+      - broker5
+      - broker6
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker1:9092'
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      CONTROL_CENTER_KAFKA_BOOTSTRAP_SERVERS: 'broker1:9092'
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+
+      # CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker:9092'
+      # CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      # CONTROL_CENTER_CONNECT_CLUSTER: http://connect1:8083
+      # CONTROL_CENTER_KAFKA_BOOTSTRAP_SERVERS: 'broker:9092'
+      # CONTROL_CENTER_REPLICATION_FACTOR: 1
+      # CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      # CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      # CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      # CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      # CONTROL_CENTER_KAFKA_MYCLUSTER_BOOTSTRAP_SERVERS: 'broker:9092'
+      # CONTROL_CENTER_UI_AUTOUPDATE_ENABLE: "true"
+      # CONTROL_CENTER_KSQL_URL: "http://ksqldb-server:8088"
+      # CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://127.0.0.1:8088"
+      # CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
+      # CONTROL_CENTER_METRICS_TOPIC_REPLICATION: 1
+
