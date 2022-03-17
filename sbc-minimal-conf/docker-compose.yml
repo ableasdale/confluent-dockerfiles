@@ -1,0 +1,58 @@
+---
+version: '3.5'
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:6.0.1
+    hostname: zookeeper
+    container_name: zookeeper
+    restart: always
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka0:
+    image: confluentinc/cp-server:6.0.1
+    hostname: kafka0
+    container_name: kafka0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "8090:8090"
+    environment:
+      KAFKA_BROKER_ID: 0
+      KAFKA_BROKER_RACK: rack-a
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka0:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka0:29092
+      KAFKA_CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      KAFKA_CONFLUENT_METRICS_ENABLE: 'true'
+      KAFKA_CONFLUENT_SUPPORT_CUSTOMER_ID: anonymous
+      KAFKA_KAFKA_REST_ADVERTISED_LISTENERS: http://localhost:8090
+      # SBC Rebalancer
+      KAFKA_CONFLUENT_BALANCER_ENABLE: 'true'
+      KAFKA_CONFLUENT_BALANCER_HEAL_UNEVEN_LOAD_TRIGGER: ANY_UNEVEN_LOAD
+      KAFKA_CONFLUENT_BALANCER_HEAL_BROKER_FAILURE_THRESHOLD_MS: 5000
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:6.0.1
+    hostname: control-center
+    container_name: control-center
+    restart: always
+    depends_on:
+      - zookeeper
+      - kafka0
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka0:29092'
+      CONTROL_CENTER_STREAMS_CPREST_URL: 'http://kafka0:8090'
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
