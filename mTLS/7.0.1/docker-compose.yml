@@ -1,0 +1,77 @@
+---
+version: '2'
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    hostname: zookeeper
+    container_name: zookeeper
+    volumes:
+            # - data-zookeeper-log-1:/var/lib/zookeeper/log
+        #      - data-zookeeper-data-1:/var/lib/zookeeper/data
+      - ./security:/etc/security
+        # networks:
+        #- confluent
+    ports:
+      - "2181:2181"
+      - "2182:2182"
+    environment:
+      ZOOKEEPER_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM:
+      ZOOKEEPER_AUTH_PROVIDER_X509: "org.apache.zookeeper.server.auth.X509AuthenticationProvider"
+      ZOOKEEPER_SERVER_CNXN_FACTORY: org.apache.zookeeper.server.NettyServerCnxnFactory
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/security/zookeeper_jaas.conf"
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SECURE_CLIENT_PORT: 2181
+      ZOOKEEPER_CLIENT_PORT: 2182
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888
+      ZOOKEEPER_SSL_KEYSTORE_LOCATION: /etc/security/zookeeper.server.keystore.jks
+      ZOOKEEPER_SSL_KEYSTORE_PASSWORD: testtest
+      ZOOKEEPER_SSL_KEYSTORE_TYPE: PKCS12
+      ZOOKEEPER_SSL_TRUSTSTORE_LOCATION: /etc/security/zookeeper.server.truststore.jks
+      ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD: testtest
+      ZOOKEEPER_SSL_TRUSTSTORE_TYPE: PKCS12
+
+  broker:
+    image: confluentinc/cp-server:7.0.1
+    hostname: broker
+    container_name: broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+      - "8091:8091"
+        # networks:
+        # - confluent
+    volumes:
+            # - data-broker-1:/var/lib/kafka/data
+      - ./security:/etc/security
+    environment:
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM:
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_BROKER_ID: 1
+
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ZOOKEEPER_SSL_CLIENT_ENABLE: "true"
+      KAFKA_ZOOKEEPER_CLIENT_CNXN_SOCKET: org.apache.zookeeper.ClientCnxnSocketNetty
+      KAFKA_ZOOKEEPER_SSL_TRUSTSTORE_LOCATION: /etc/security/broker.server.truststore.jks
+      KAFKA_ZOOKEEPER_SSL_TRUSTSTORE_PASSWORD: testtest
+      KAFKA_ZOOKEEPER_SSL_TRUSTSTORE_TYPE: PKCS12
+      KAFKA_ZOOKEEPER_SSL_KEYSTORE_LOCATION: /etc/security/broker.server.keystore.jks
+      KAFKA_ZOOKEEPER_SSL_KEYSTORE_PASSWORD: testtest
+      KAFKA_ZOOKEEPER_SSL_KEYSTORE_TYPE: PKCS12
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092,PLAINTEXT_INTERNAL://broker-1:39092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-1:29092,PLAINTEXT_HOST://localhost:9092,PLAINTEXT_INTERNAL://broker-1:39092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
