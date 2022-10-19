@@ -49,11 +49,11 @@ services:
       KAFKA_CONFLUENT_METADATA_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_CONFLUENT_METRICS_ENABLE: 'true'
       KAFKA_CONFLUENT_SECURITY_EVENT_LOGGER_EXPORTER_KAFKA_TOPIC_REPLICAS: 1
-      #KAFKA_LOG4J_LOGGERS: 'log4j.rootLogger=TRACE,kafka.authorizer.logger=DEBUG,io.confluent.security.auth.provider.ldap.LdapGroupManager=TRACE'
-      #KAFKA_OPTS: -Dsun.security.krb5.debug=true
+      KAFKA_LOG4J_LOGGERS: 'log4j.rootLogger=TRACE,kafka.authorizer.logger=DEBUG,io.confluent.security.auth.provider.ldap.LdapGroupManager=TRACE'
+      KAFKA_OPTS: -Dsun.security.krb5.debug=true
 
   control-center:
-    image: confluentinc/cp-enterprise-control-center:7.2.2
+    image: confluentinc/cp-enterprise-control-center:7.2.1
     hostname: control-center
     container_name: control-center
     depends_on:
@@ -61,19 +61,22 @@ services:
       - kafka0
     ports:
       - "9021:9021"
-    volumes:
-      - ./control-center-jaas.conf:/tmp/control-center-jaas.conf
-      - ./log4jnew.conf:/tmp/log4j.conf
     environment:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka0:29092'
+      #CONTROL_CENTER_STREAMS_CPREST_URL: 'http://kafka0:8090'
       CONTROL_CENTER_REPLICATION_FACTOR: 1
-      # For LDAP
-      CONTROL_CENTER_REST_AUTHENTICATION_REALM: c3
+      #CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      #CONTROL_CENTER_METRICS_TOPIC_REPLICATION: 1
+      #CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_REPLICATION: 1
       CONTROL_CENTER_REST_AUTHENTICATION_METHOD: BASIC
-      CONTROL_CENTER_AUTH_RESTRICTED_ROLES: Guests
-      CONTROL_CENTER_REST_AUTHENTICATION_ROLES: Administrators,Guests
-      CONTROL_CENTER_OPTS: "-Dlog4j.configuration=/tmp/log4j.conf -Djava.security.auth.login.config=/tmp/control-center-jaas.conf"
-      # CONTROL_CENTER_O
-      # Performance tuning
-      CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: "4000000000"
-      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: "5"
+      CONTROL_CENTER_REST_AUTHENTICATION_REALM: AD-TEST.CONFLUENT.IO
+      CONTROL_CENTER_REST_AUTHENTICATION_ROLES: Administrators
+
+      # CONTROL_CENTER_AUTH_RESTRICTED_ROLES: Administrators
+      # KAFKA_OPTS: -Djava.security.auth.login.config=./control-center-jaas.conf
+      CONTROL_CENTER_LOG4J_LOGGERS: 'log4j.rootLogger=TRACE,kafka.authorizer.logger=DEBUG,io.confluent.security.auth.provider.ldap.LdapGroupManager=TRACE'
+      #CONTROL_CENTER_LOG4J_OPTS: -Dlog4j.configuration=./log4j.conf
+      CONTROL_CENTER_OPTS: "-Djava.security.auth.login.config=./control-center-jaas.conf"
+
+      control-center-start ./control-center.properties
+   
