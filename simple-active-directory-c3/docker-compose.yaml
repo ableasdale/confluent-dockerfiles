@@ -72,7 +72,9 @@ services:
       CONTROL_CENTER_REST_AUTHENTICATION_METHOD: BASIC
       CONTROL_CENTER_AUTH_RESTRICTED_ROLES: Guests
       CONTROL_CENTER_REST_AUTHENTICATION_ROLES: Administrators,Guests
-      CONTROL_CENTER_OPTS: "-Dlog4j.configuration=/tmp/log4j.conf -Djava.security.auth.login.config=/tmp/control-center-jaas.conf"
+      CONTROL_CENTER_OPTS: "-Djava.security.auth.login.config=/tmp/control-center-jaas.conf"
+      CONTROL_CENTER_LOG4J_LOGGERS: 'log4j.logger.org.eclipse.jetty=DEBUG'
+      # -Dlog4j.configuration=file:/tmp/log4j.conf
       # CONTROL_CENTER_O
       # Performance tuning
       CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: "4000000000"
