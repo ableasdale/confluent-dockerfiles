@@ -73,6 +73,12 @@ docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:90
 docker-compose exec broker1 bash
 ```
 
+## SSL Check
+
+```bash
+openssl s_client -connect localhost:9093 -tls1_3 -showcerts
+```
+
 ## Check logs
 
 ```bash

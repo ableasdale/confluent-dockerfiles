@@ -15,8 +15,8 @@ services:
     restart: always
     ports:
       - "9091:9091"
-      - "9093:9093"
       - "29091:29091"
+      - "29093:29093"
     volumes:
       - ./security1:/etc/kafka/secrets/
       - ./client1:/tmp/producer/
@@ -24,8 +24,8 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: BROKER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,SSL:SSL
-      KAFKA_LISTENERS: BROKER://:9091,PLAINTEXT_HOST://:29091,SSL://:9093
-      KAFKA_ADVERTISED_LISTENERS: BROKER://broker1:9091,PLAINTEXT_HOST://localhost:29091,SSL://broker1:9093
+      KAFKA_LISTENERS: BROKER://:9091,PLAINTEXT_HOST://:29091,SSL://0.0.0.0:29093
+      KAFKA_ADVERTISED_LISTENERS: BROKER://broker1:9091,PLAINTEXT_HOST://localhost:29091,SSL://localhost:29093
       KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
       KAFKA_SSL_KEYSTORE_FILENAME: kafka.server.keystore.jks
       # KAFKA_SSL_KEY_PASSWORD: confluent
