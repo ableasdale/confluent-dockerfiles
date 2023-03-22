@@ -40,12 +40,41 @@ Now let's try to connect to Zookeeper instance on the second cluster using `zook
 docker-compose exec zookeeper2 zookeeper-shell localhost:2182
 ```
 
-```
+```bash
 get /controller
 {"version":1,"brokerid":3,"timestamp":"1673382712259"}
 ```
 
-```
+```bash
 get /cluster/id
 {"version":"1","id":"3vcAUrrvSCqPDykFsSIhfg"}
+```
+
+## Produce - insecure
+
+```bash
+docker-compose exec broker1 kafka-console-producer --broker-list broker1:9091 --topic kafka-topic
+```
+
+## Consume - insecure
+
+```bash
+docker-compose exec broker1 kafka-console-consumer --bootstrap-server broker1:9091 --from-beginning --topic kafka-topic
+```
+
+```bash
+docker-compose exec broker1 kafka-console-producer --broker-list broker1:9093 --topic kafka-topic --producer.config /tmp/client-ssl-auth.properties
+docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:9093 --topic kafka-topic --producer.config /tmp/client-ssl-auth.properties
+```
+
+## Debug
+
+```bash
+docker-compose exec broker1 bash
+```
+
+## Check logs
+
+```bash
+docker logs broker1 | grep "SocketServer"
 ```

@@ -15,9 +15,11 @@ services:
     restart: always
     ports:
       - "9091:9091"
+      - "9093:9093"
       - "29091:29091"
     volumes:
       - ./security1:/etc/kafka/secrets/
+      - ./client1:/tmp/producer/
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
@@ -32,6 +34,7 @@ services:
       KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.server.truststore.jks
       KAFKA_SSL_TRUSTSTORE_CREDENTIALS: broker_sslkey_creds
       KAFKA_SSL_CLIENT_AUTH: "required"
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "HTTPS"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_DEFAULT_REPLICATION_FACTOR: 1
