@@ -114,6 +114,38 @@ docker-compose exec broker2 kafka-console-producer --bootstrap-server broker2:90
 docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:9094 --topic kafka-topic --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
 ```
 
+## Establish the Cluster Link between the two brokers
+
+docker-compose exec broker1 kafka-cluster-links --help
+
+Get the ID:
+
+```bash
+docker-compose exec broker1 kafka-cluster cluster-id --bootstrap-server broker1:9091
+Cluster ID: yHmKId23QNyxyTIrmbo2YA
+```
+
+docker-compose exec broker1 kafka-cluster-links --bootstrap-server broker2:9094 --create --link my-link --command-config /tmp/producer/broker1-link-config.properties --config-file /tmp/producer/broker1-link-config.properties --cluster-id yHmKId23QNyxyTIrmbo2YA
+
+```bash
+docker-compose exec broker1 kafka-cluster-links --bootstrap-server broker2:9094 --create --link my-link --command-config /tmp/producer/broker1-link-config.properties --config-file /tmp/producer/broker1-link-config.properties --cluster-id yHmKId23QNyxyTIrmbo2YA
+```
+
+You should see:
+
+```
+Cluster link 'my-link' creation successfully completed.
+```
+
+
+docker-compose exec broker1 kafka-cluster-links --bootstrap-server broker2:9094 --create --link my-link --config-file /tmp/producer/broker1-link-config.properties --cluster-id VbspgOThRyWItHm3MJOaPw
+
+If you get an out of heap message, run this and try again:
+
+```bash
+export KAFKA_HEAP_OPTS="-Xmx1G -Xms1G"
+```
+
 ## Troubleshooting
 
 ### To debug directly on the host

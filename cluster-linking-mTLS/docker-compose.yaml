@@ -46,6 +46,8 @@ services:
       KAFKA_CONFLUENT_METRICS_ENABLE: 'false'
       KAFKA_CONFLUENT_REPORTERS_TELEMETRY_AUTO_ENABLE: 'false'
       KAFKA_CONFLUENT_BALANCER_ENABLE: 'false'
+      # Cluster Linking Specific Configuration
+      KAFKA_PASSWORD_ENCODER_SECRET: broker_sslkey_creds
 
 ## Second Cluster below
 
@@ -94,3 +96,5 @@ services:
       KAFKA_CONFLUENT_METRICS_ENABLE: 'false'
       KAFKA_CONFLUENT_REPORTERS_TELEMETRY_AUTO_ENABLE: 'false'
       KAFKA_CONFLUENT_BALANCER_ENABLE: 'false'
+      # Cluster Linking Specific Configuration
+      KAFKA_PASSWORD_ENCODER_SECRET: broker_sslkey_creds
