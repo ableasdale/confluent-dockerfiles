@@ -272,6 +272,27 @@ Ensure that the messages can be read from the Consumer for `broker2_clicks` on `
 docker-compose exec broker1 kafka-console-consumer --bootstrap-server broker1:9093 --topic broker2_clicks --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
 ```
 
+### Broker1: Consumer Subscribes to both topics; Producers write to each topic
+
+We will create a wildcard include when we subscribe to the topic `--include "(.*)clicks$"`:
+
+```bash
+docker-compose exec broker1 kafka-console-consumer --bootstrap-server broker1:9093 --include "(.*)clicks$" --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
+```
+
+On `broker2`:
+
+```bash
+docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:9094 --include "(.*)clicks$" --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
+```
+
+And then we can configure Producers for both source topics and we'll see updates reflected in both topics:
+
+```bash
+docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:9093 --topic clicks --producer.config /tmp/producer/client-ssl-auth.properties
+docker-compose exec broker2 kafka-console-producer --bootstrap-server broker2:9094 --topic clicks --producer.config /tmp/producer/client-ssl-auth.properties
+```
+
 ## Troubleshooting
 
 ### Checking topics
