@@ -246,13 +246,31 @@ Let's ensure the messages can be read from the Consumer for `broker1_clicks` on 
 docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:9094 --topic broker1_clicks --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
 ```
 
-### Creating the broker2 Cluster Link
+### Creating the Cluster Link for `broker2` to `broker1`
 
 ```bash
-docker-compose exec broker1 kafka-cluster-links --bootstrap-server broker2:9094 --create --link broker1-link --command-config /tmp/producer/broker1-bidirectional-link-config.properties --config-file /tmp/producer/broker1-bidirectional-link-config.properties --cluster-id yHmKId23QNyxyTIrmbo2YA
+docker-compose exec broker2 kafka-cluster-links --bootstrap-server broker1:9093 --create --link broker2-link --command-config /tmp/producer/broker2-bidirectional-link-config.properties --config-file /tmp/producer/broker2-bidirectional-link-config.properties --cluster-id yRIe4SqOTdKAEZVc-FgKtw
 ```
 
+### Creating the mirror from `broker2` to `broker1`
 
+Create the Mirror:
+
+```bash
+docker-compose exec broker2 kafka-mirrors --create --source-topic clicks --mirror-topic broker2_clicks --link broker2-link --bootstrap-server broker1:9093 --command-config /tmp/producer/broker2-bidirectional-link-config.properties
+```
+
+Produce to the `clicks` topic on broker2
+
+```bash
+docker-compose exec broker2 kafka-console-producer --bootstrap-server broker2:9094 --topic clicks --producer.config /tmp/producer/client-ssl-auth.properties
+```
+
+Ensure that the messages can be read from the Consumer for `broker2_clicks` on `broker1`:
+
+```bash
+docker-compose exec broker1 kafka-console-consumer --bootstrap-server broker1:9093 --topic broker2_clicks --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
+```
 
 ## Troubleshooting
 
