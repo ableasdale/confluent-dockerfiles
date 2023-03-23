@@ -65,7 +65,7 @@ docker-compose exec broker1 kafka-console-consumer --bootstrap-server broker1:90
 ```bash
 docker-compose exec broker1 kafka-console-producer --broker-list broker1:9093 --topic kafka-topic --producer.config /tmp/client-ssl-auth.properties
 docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:9093 --topic kafka-topic --producer.config /tmp/client-ssl-auth.properties
-docker-compose exec broker1 kafka-console-producer --bootstrap-server localhost:9093 --topic kafka-topic --producer.config /tmp/producer/client-ssl-auth.properties
+docker-compose exec broker1 kafka-console-producer --bootstrap-server localhost:29093 --topic kafka-topic --producer.config /tmp/producer/client-ssl-auth.properties
 ```
 
 ## Debug
@@ -74,11 +74,18 @@ docker-compose exec broker1 kafka-console-producer --bootstrap-server localhost:
 docker-compose exec broker1 bash
 ```
 
+```bash
+docker-compose exec broker1 bash
+/etc/kafka
+cat kafka.properties
+```
+
 ## SSL Check
 
 ```bash
 openssl s_client -connect localhost:29093 -tls1_2 -showcerts
-openssl s_client -connect localhost:9093 -tls1_3 -showcerts
+openssl s_client -connect localhost:29093 -tls1_3 -showcerts
+curl -k -v --cert-type P12 --cert kafka.client.keystore.jks:confluent https://localhost:29093
 ```
 
 ## Check logs
