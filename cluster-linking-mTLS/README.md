@@ -68,6 +68,20 @@ docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:90
 docker-compose exec broker1 kafka-console-producer --bootstrap-server localhost:29093 --topic kafka-topic --producer.config /tmp/producer/client-ssl-auth.properties
 ```
 
+## Produce using mTLS
+
+```bash
+docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:29093 --topic kafka-topic --producer.config /tmp/producer/client-ssl-auth.properties
+```
+
+## Consumer using mTLS
+
+```bash
+docker-compose exec broker1 kafka-console-consumer --bootstrap-server broker1:29093 --topic kafka-topic --consumer.config /tmp/producer/client-ssl-auth.properties --from-beg
+inning
+```
+
+
 ## Debug
 
 ```bash

@@ -9,10 +9,12 @@ ssh vboxuser@Ubuntu
 
 ## Set up the VM
 
-Install VBox tools: 
+Install VBox tools:
 
+```bash
 cd /media/vboxuser/VBox_GAs_7.0.6/
 ./VBoxLinuxAdditions.run
+```
 
 I also installed jvm, downloaded kafka and tar xvfzd it...
 
@@ -45,11 +47,8 @@ vboxuser    ALL=(ALL:ALL) ALL
 
 ** uncomment listeners and advertised listeners
 
-```
+```properties
 listeners=PLAINTEXT://:9092
-
-# Listener name, hostname and port the broker will advertise to clients.
-# If not set, it uses the value for "listeners".
 advertised.listeners=PLAINTEXT://Ubuntu:9092
 ```
 
@@ -280,4 +279,3 @@ ssl.key.password=confluent
 ~/Documents/kafka_2.13-3.4.0/bin/kafka-console-producer.sh --bootstrap-server Ubuntu:9093 --topic kafka-test
 
 ~/Documents/kafka_2.13-3.4.0/bin/kafka-console-producer.sh --bootstrap-server Ubuntu:9093 --topic kafka-test --producer.config ~/Documents/
-
