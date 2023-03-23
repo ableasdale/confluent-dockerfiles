@@ -1,9 +1,9 @@
 version: "3.8"
 services:
-  zookeeper:
+  zookeeper1:
     image: confluentinc/cp-zookeeper:${CP_TAG}
-    hostname: zookeeper
-    container_name: zookeeper
+    hostname: zookeeper1
+    container_name: zookeeper1
     restart: always
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -14,17 +14,17 @@ services:
     container_name: broker1
     restart: always
     ports:
-      - "29091:29091"
-      - "29093:29093"
+      - "9091:9091"
+      - "9093:9093"
     volumes:
       - ./security1:/etc/kafka/secrets/
       - ./client:/tmp/producer/
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper1:2181'
       # KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: BROKER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,SSL:SSL
-      KAFKA_LISTENERS: PLAINTEXT://:29091,SSL://:29093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:29091,SSL://broker1:29093
+      KAFKA_LISTENERS: PLAINTEXT://:9091,SSL://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:9091,SSL://broker1:9093
       # KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
       KAFKA_SSL_KEYSTORE_FILENAME: kafka.server.keystore.jks
       # KAFKA_SSL_KEY_PASSWORD: confluent
@@ -63,8 +63,8 @@ services:
     container_name: broker2
     restart: always
     ports:
-      - "29092:29092"
-      - "29094:29094"
+      - "9092:9092"
+      - "9094:9094"
     volumes:
       - ./security2:/etc/kafka/secrets/
       - ./client:/tmp/producer/
@@ -72,8 +72,8 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper2:2182'
       # KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: BROKER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_LISTENERS: PLAINTEXT://:29091,SSL://:29094
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:29091,SSL://broker2:29094
+      KAFKA_LISTENERS: PLAINTEXT://:9092,SSL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:9092,SSL://broker2:9094
       # KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
       KAFKA_SSL_KEYSTORE_FILENAME: kafka.server.keystore.jks
       # KAFKA_SSL_KEY_PASSWORD: confluent
