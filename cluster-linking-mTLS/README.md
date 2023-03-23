@@ -187,6 +187,61 @@ As soon as both links have been created, you can add prefixes to both topics and
 
 [![Bi-Directional Cluster Linking](https://docs.confluent.io/cloud/current/_images/cluster-link-migrate-consumers-producers.png)](https://docs.confluent.io/cloud/current/multi-cloud/cluster-linking/migrate-cc.html#bidirectional-with-cluster-linking)
 
+### Establishing Cluster Linking from broker1 to broker2
+
+We're going to set up a new Cluster Link from Broker 1 with an additional property:
+
+```properties
+cluster.link.prefix=broker1_
+```
+
+This will prefix the mirror of the topic with `broker1`.
+
+```bash
+docker-compose exec broker1 kafka-cluster-links --bootstrap-server broker2:9094 --create --link broker1-link --command-config /tmp/producer/broker1-bidirectional-link-config.properties --config-file /tmp/producer/broker1-bidirectional-link-config.properties --cluster-id yHmKId23QNyxyTIrmbo2YA
+```
+
+Note that the destination cluster (broker2) is the bootstrap server for this connection and the `cluster-id` for this link is the id for the `broker1` cluster.
+
+You should see:
+
+```bash
+[2023-03-23 20:32:10,973] WARN These configurations '[cluster.link.prefix]' were supplied but are not used yet. (org.apache.kafka.clients.admin.AdminClientConfig)
+Cluster link 'broker1-link' creation successfully completed.
+```
+
+We're going to create our "clicks" topics (which will be created on both broker1 and broker2):
+
+```bash
+docker exec broker1 kafka-topics --bootstrap-server broker1:9093 --topic clicks --replication-factor 1 --partitions 1 --create --config min.insync.replicas=1 --command-config /tmp/producer/client-ssl-auth.properties
+```
+
+And we will do the same for `broker2`:
+
+```bash
+docker exec broker2 kafka-topics --bootstrap-server broker2:9094 --topic clicks --replication-factor 1 --partitions 1 --create --config min.insync.replicas=1 --command-config /tmp/producer/client-ssl-auth.properties
+```
+
+Now let's create the mirror for the topic on `broker1`:
+
+```bash
+docker-compose exec broker1 kafka-mirrors --create --source-topic clicks --mirror-topic broker1_clicks --link broker1-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker1-bidirectional-link-config.properties
+```
+
+And let's check that data produced on the source `clicks` topic is mirrored on `broker1_clicks`:
+
+```bash
+docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:9093 --topic click --producer.config /tmp/producer/client-ssl-auth.properties
+```
+
+Let's ensure the messages can be read from the Consumer for `broker1_clicks` on `broker2`:
+
+```bash
+docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:9094 --topic broker1_clicks --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
+```
+
+
+
 
 ## Troubleshooting
 
@@ -271,4 +326,8 @@ You should see the following lines in the output:
 docker-compose exec broker1 kafka-console-producer --broker-list broker1:9093 --topic kafka-topic --producer.config /tmp/client-ssl-auth.properties
 docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:9093 --topic kafka-topic --producer.config /tmp/client-ssl-auth.properties
 docker-compose exec broker1 kafka-console-producer --bootstrap-server localhost:29093 --topic kafka-topic --producer.config /tmp/producer/client-ssl-auth.properties
+```
+
+```bash
+docker-compose exec broker1 kafka-mirrors --create --source-topic clicks --mirror-topic broker1_clicks --link broker1-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker1-bidirectional-link-config.properties
 ```
