@@ -116,16 +116,20 @@ docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:90
 
 ## Establish the Cluster Link between the two brokers
 
-docker-compose exec broker1 kafka-cluster-links --help
+To get a list of common switches for the `kafka-cluster-links` command, you can run:
 
-Get the ID:
+```bash
+docker-compose exec broker1 kafka-cluster-links --help
+```
+
+To start with, we need to get the Cluster ID for broker1:
 
 ```bash
 docker-compose exec broker1 kafka-cluster cluster-id --bootstrap-server broker1:9091
 Cluster ID: yHmKId23QNyxyTIrmbo2YA
 ```
 
-docker-compose exec broker1 kafka-cluster-links --bootstrap-server broker2:9094 --create --link my-link --command-config /tmp/producer/broker1-link-config.properties --config-file /tmp/producer/broker1-link-config.properties --cluster-id yHmKId23QNyxyTIrmbo2YA
+Using that ID, we can build the command for `kafka-cluster-links`:
 
 ```bash
 docker-compose exec broker1 kafka-cluster-links --bootstrap-server broker2:9094 --create --link my-link --command-config /tmp/producer/broker1-link-config.properties --config-file /tmp/producer/broker1-link-config.properties --cluster-id yHmKId23QNyxyTIrmbo2YA
@@ -133,20 +137,52 @@ docker-compose exec broker1 kafka-cluster-links --bootstrap-server broker2:9094 
 
 You should see:
 
-```
+```bash
 Cluster link 'my-link' creation successfully completed.
 ```
 
+Let's confirm that the link has been set up by describing it:
 
-docker-compose exec broker1 kafka-cluster-links --bootstrap-server broker2:9094 --create --link my-link --config-file /tmp/producer/broker1-link-config.properties --cluster-id VbspgOThRyWItHm3MJOaPw
+```bash
+docker-compose exec broker1 kafka-cluster-links --list --bootstrap-server broker2:9094 --command-config /tmp/producer/broker1-link-config.properties
+```
 
-If you get an out of heap message, run this and try again:
+Now let's try to create a topic (on broker1):
+
+```bash
+docker exec -it broker1 /bin/bash -c 'kafka-topics --bootstrap-server broker1:9091 --topic demo-cl-topic --replication-factor 1 --partitions 1 --create --config min.insync.replicas=1'
+```
+
+Now let's mirror it on broker2:
+
+```bash
+docker-compose exec broker1 kafka-mirrors --create --mirror-topic demo-cl-topic --link my-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker1-link-config.properties
+```
+
+You should see:
+
+```
+Created topic demo-cl-topic.
+```
+
+## Troubleshooting
+
+### JVM Heap Issues when running `kafka-cluster-links`
+
+If you get an out of heap message that looks something like this:
+
+```java
+java.lang.OutOfMemoryError: Java heap space
+	at java.base/java.nio.HeapByteBuffer.<init>(HeapByteBuffer.java:61)
+```
+
+Run this and try again:
 
 ```bash
 export KAFKA_HEAP_OPTS="-Xmx1G -Xms1G"
 ```
 
-## Troubleshooting
+Note that this message often appears if the command is missing something critical; double check what you're passing into `kafka-cluster-links`
 
 ### To debug directly on the host
 
