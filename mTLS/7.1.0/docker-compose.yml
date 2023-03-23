@@ -1,0 +1,41 @@
+---
+version: '2.3'
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.1.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    image: confluentinc/cp-enterprise-kafka:7.1.0
+    #image: confluentinc/cp-kafka:7.0.1
+    hostname: broker
+    container_name: broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    volumes:
+            # - data-broker-1:/var/lib/kafka/data
+      - ./security:/etc/security
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:29092"
+      KAFKA_BROKER_ID: 5
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      #CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      #CONFLUENT_TIER_METADATA_REPLICATION_FACTOR: 1
+      KAFKA_SSL_CLIENT_AUTH: "required"
+      KAFKA_SSL_TRUSTSTORE_FILENAME: server.truststore.pkcs12
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: server_creds
