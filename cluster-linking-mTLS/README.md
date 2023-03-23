@@ -1,8 +1,13 @@
-# Confluent Platform Cluster Linking
+# Confluent Platform Cluster Linking (with mTLS)
 
-A project to demonstrate Cluster Linking Between two clusters running Confluent Platform (7.3.1).
+A project to demonstrate Cluster Linking (over mTLS) between two clusters running Confluent Platform (7.3.1).
 
 The project will set up two single-broker Kafka "Clusters", each with a separate Zookeeper instance.
+
+## Creating the certificates and stores
+
+`cd` to `security1` and run `create-certs.sh`; this will create the root certificate and all the stores for both the server and the clients.
+`cd` to `security2` and run `create-certs.sh`; this will copy over the previously created root certificate and create all the stores for both the server and the clients.
 
 ## Starting the Clusters
 
@@ -84,51 +89,75 @@ And again, confirm that the test works with the second broker/cluster:
 docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:9092 --from-beginning --topic kafka-topic
 ```
 
-
-
 ## (Client) Producer on Broker 1 using mTLS
 
 ```bash
-docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:29093 --topic kafka-topic --producer.config /tmp/producer/client-ssl-auth.properties
+docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:9093 --topic kafka-topic --producer.config /tmp/producer/client-ssl-auth.properties
 ```
 
 ## (Client) Consumer on Broker 1 using mTLS
 
 ```bash
-docker-compose exec broker1 kafka-console-consumer --bootstrap-server broker1:29093 --topic kafka-topic --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
+docker-compose exec broker1 kafka-console-consumer --bootstrap-server broker1:9093 --topic kafka-topic --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
 ```
 
 ## (Client) Producer on Broker 2 using mTLS
 
 ```bash
-docker-compose exec broker2 kafka-console-producer --bootstrap-server broker2:29094 --topic kafka-topic --producer.config /tmp/producer/client-ssl-auth.properties
+docker-compose exec broker2 kafka-console-producer --bootstrap-server broker2:9094 --topic kafka-topic --producer.config /tmp/producer/client-ssl-auth.properties
 ```
 
 ## (Client) Consumer on Broker 2 using mTLS
 
 ```bash
-docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:29094 --topic kafka-topic --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
+docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:9094 --topic kafka-topic --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
 ```
 
-## Debug
+## Troubleshooting
+
+### To debug directly on the host
+
+You can ssh into the host by running:
 
 ```bash
 docker-compose exec broker1 bash
 ```
 
+From there you can look at what the docker-compose file has set up with respect to the brokers:
+
 ```bash
-docker-compose exec broker1 bash
 /etc/kafka
 cat kafka.properties
 ```
 
 ## SSL Checking
 
+Note that the TLS 1.3 check shows that the handshake was successful although there is a "bad certificate" error.  It does confirm that the connection works (which means the listener has been set up properly).
+
 ```bash
-openssl s_client -connect localhost:29093 -tls1_2 -showcerts
-openssl s_client -connect localhost:29093 -tls1_3 -showcerts
-curl -k -v --cert-type P12 --cert kafka.client.keystore.jks:confluent https://localhost:29093
+docker-compose exec broker1 openssl s_client -connect broker1:9093 -tls1_2 -showcerts
+docker-compose exec broker1 openssl s_client -connect broker1:9093 -tls1_3 -showcerts
 ```
+
+We will do the same checks on Broker 2:
+
+```bash
+docker-compose exec broker2 openssl s_client -connect broker2:9094 -tls1_2 -showcerts
+docker-compose exec broker2 openssl s_client -connect broker2:9094 -tls1_3 -showcerts
+```
+
+We can confirm that the TLS handshake takes place (and test the client keystore) by running:
+
+```bash
+docker-compose exec broker1 curl -k -v --cert-type P12 --cert /etc/kafka/secrets/kafka.client.keystore.jks:confluent https://broker1:9093
+```
+
+And we can perform the same check for broker2:
+
+```bash
+docker-compose exec broker2 curl -k -v --cert-type P12 --cert /etc/kafka/secrets/kafka.client.keystore.jks:confluent https://broker2:9094
+```
+
 
 ## Check logs
 
