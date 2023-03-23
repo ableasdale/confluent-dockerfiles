@@ -6,10 +6,11 @@ The project will set up two single-broker Kafka "Clusters", each with a separate
 
 ## Creating the certificates and stores
 
-`cd` to `security1` and run `create-certs.sh`; this will create the root certificate and all the stores for both the server and the clients.
-`cd` to `security2` and run `create-certs.sh`; this will copy over the previously created root certificate and create all the stores for both the server and the clients.
+- Starting from the directory for this project (`confluent-dockerfiles/cluster-linking-mTLS`)
+- `cd` to `security1` and run `create-certs.sh` from within the directory; this will create the root certificate and all the stores for both the server and the clients.
+- `cd` to `security2` and run `create-certs.sh` from within the directory; this will copy over the previously created root certificate and create all the stores for both the server and the clients.
 
-## Starting the Clusters
+## Starting the clusters
 
 Start both clusters using the provided `docker-compose.yaml` file:
 
@@ -130,7 +131,7 @@ From there you can look at what the docker-compose file has set up with respect 
 cat kafka.properties
 ```
 
-## SSL Checking
+### TLS/SSL Checks
 
 Note that the TLS 1.3 check shows that the handshake was successful although there is a "bad certificate" error.  It does confirm that the connection works (which means the listener has been set up properly).
 
@@ -139,7 +140,7 @@ docker-compose exec broker1 openssl s_client -connect broker1:9093 -tls1_2 -show
 docker-compose exec broker1 openssl s_client -connect broker1:9093 -tls1_3 -showcerts
 ```
 
-We will do the same checks on Broker 2:
+We can perform the same checks on Broker 2:
 
 ```bash
 docker-compose exec broker2 openssl s_client -connect broker2:9094 -tls1_2 -showcerts
@@ -158,11 +159,19 @@ And we can perform the same check for broker2:
 docker-compose exec broker2 curl -k -v --cert-type P12 --cert /etc/kafka/secrets/kafka.client.keystore.jks:confluent https://broker2:9094
 ```
 
+### Checking the broker logs
 
-## Check logs
+You can use the `docker logs` command for this.  When Kafka brokers first start-up, they will log out the endpoints (listeners) that have been configured:
 
 ```bash
 docker logs broker1 | grep "SocketServer"
+```
+
+You should see the following lines in the output:
+
+```log
+[2023-03-23 15:47:55,669] INFO [SocketServer listenerType=ZK_BROKER, nodeId=1] Created data-plane acceptor and processors for endpoint : ListenerName(PLAINTEXT) (kafka.network.SocketServer)
+[2023-03-23 15:47:56,068] INFO [SocketServer listenerType=ZK_BROKER, nodeId=1] Created data-plane acceptor and processors for endpoint : ListenerName(SSL) (kafka.network.SocketServer)
 ```
 
 #### Notes below
