@@ -197,6 +197,8 @@ cluster.link.prefix=broker1_
 
 This will prefix the mirror of the topic with `broker1`.
 
+### Creating the Cluster Link for `broker1` to `broker2`
+
 ```bash
 docker-compose exec broker1 kafka-cluster-links --bootstrap-server broker2:9094 --create --link broker1-link --command-config /tmp/producer/broker1-bidirectional-link-config.properties --config-file /tmp/producer/broker1-bidirectional-link-config.properties --cluster-id yHmKId23QNyxyTIrmbo2YA
 ```
@@ -210,6 +212,8 @@ You should see:
 Cluster link 'broker1-link' creation successfully completed.
 ```
 
+### Creating Source `clicks` topics on both clusters
+
 We're going to create our "clicks" topics (which will be created on both broker1 and broker2):
 
 ```bash
@@ -222,6 +226,8 @@ And we will do the same for `broker2`:
 docker exec broker2 kafka-topics --bootstrap-server broker2:9094 --topic clicks --replication-factor 1 --partitions 1 --create --config min.insync.replicas=1 --command-config /tmp/producer/client-ssl-auth.properties
 ```
 
+### Creating the mirror from `broker1` to `broker2`
+
 Now let's create the mirror for the topic on `broker1`:
 
 ```bash
@@ -231,7 +237,7 @@ docker-compose exec broker1 kafka-mirrors --create --source-topic clicks --mirro
 And let's check that data produced on the source `clicks` topic is mirrored on `broker1_clicks`:
 
 ```bash
-docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:9093 --topic click --producer.config /tmp/producer/client-ssl-auth.properties
+docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:9093 --topic clicks --producer.config /tmp/producer/client-ssl-auth.properties
 ```
 
 Let's ensure the messages can be read from the Consumer for `broker1_clicks` on `broker2`:
@@ -240,10 +246,29 @@ Let's ensure the messages can be read from the Consumer for `broker1_clicks` on 
 docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:9094 --topic broker1_clicks --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
 ```
 
+### Creating the broker2 Cluster Link
+
+```bash
+docker-compose exec broker1 kafka-cluster-links --bootstrap-server broker2:9094 --create --link broker1-link --command-config /tmp/producer/broker1-bidirectional-link-config.properties --config-file /tmp/producer/broker1-bidirectional-link-config.properties --cluster-id yHmKId23QNyxyTIrmbo2YA
+```
 
 
 
 ## Troubleshooting
+
+### Checking topics
+
+To list the topics on a given broker, you can run:
+
+```bash
+docker-compose exec broker2 kafka-topics --bootstrap-server broker1:9093 --list --command-config /tmp/producer/client-ssl-auth.properties
+```
+
+To check the destination topic:
+
+```bash
+docker-compose exec broker2 kafka-topics --bootstrap-server broker2:9094 --describe --topic broker1_clicks --command-config /tmp/producer/client-ssl-auth.properties
+```
 
 ### JVM Heap Issues when running `kafka-cluster-links`
 
@@ -251,7 +276,7 @@ If you get an out of heap message that looks something like this:
 
 ```java
 java.lang.OutOfMemoryError: Java heap space
-	at java.base/java.nio.HeapByteBuffer.<init>(HeapByteBuffer.java:61)
+    at java.base/java.nio.HeapByteBuffer.<init>(HeapByteBuffer.java:61)
 ```
 
 Run this and try again:
@@ -330,4 +355,8 @@ docker-compose exec broker1 kafka-console-producer --bootstrap-server localhost:
 
 ```bash
 docker-compose exec broker1 kafka-mirrors --create --source-topic clicks --mirror-topic broker1_clicks --link broker1-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker1-bidirectional-link-config.properties
+```
+
+```bash
+docker-compose exec broker1 kafka-mirrors --create --source-topic clicks2 --mirror-topic broker1_clicks2 --link broker1-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker1-bidirectional-link-config.properties
 ```
