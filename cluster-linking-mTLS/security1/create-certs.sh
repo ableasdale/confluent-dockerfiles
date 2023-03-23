@@ -1,5 +1,6 @@
-echo "Step 1"
+echo "Step 1: Root Certificate (CA)"
 openssl req -new -newkey rsa:4096 -days 365 -x509 -subj "/CN=Kafka-Security-CA" -keyout ca-key -out ca-cert -nodes
+
 echo "Step 2"
 keytool -genkey -keystore kafka.server.keystore.jks -validity 365 -storepass confluent -keypass confluent -dname "CN=broker1" -storetype pkcs12 -keyalg RSA
 echo "Step 3"
