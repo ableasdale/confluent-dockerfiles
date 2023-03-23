@@ -83,8 +83,6 @@ bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic kafka-t
 
 kafka-topics --bootstrap-server broker1:9091 --topic demo-perf-topic --replication-factor 3 --partitions 1 --create --config min.insync.replicas=2
 
-
-
 ### Producer test from Desktop machine
 
 ```bash
