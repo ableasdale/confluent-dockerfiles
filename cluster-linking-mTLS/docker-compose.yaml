@@ -14,12 +14,11 @@ services:
     container_name: broker1
     restart: always
     ports:
-      - "9091:9091"
       - "29091:29091"
       - "29093:29093"
     volumes:
       - ./security1:/etc/kafka/secrets/
-      - ./client1:/tmp/producer/
+      - ./client:/tmp/producer/
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
@@ -58,21 +57,31 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2182
       ZOOKEEPER_TICK_TIME: 2000
-  broker4:
+  broker2:
     image: confluentinc/cp-server:${CP_TAG}
     hostname: broker2
     container_name: broker2
     restart: always
     ports:
-      - "9092:9092"
       - "29092:29092"
+      - "29094:29094"
+    volumes:
+      - ./security2:/etc/kafka/secrets/
+      - ./client:/tmp/producer/
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper2:2182'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: BROKER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_LISTENERS: BROKER://:9092,PLAINTEXT_HOST://:29092
-      KAFKA_ADVERTISED_LISTENERS: BROKER://broker2:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
+      # KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: BROKER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://:29091,SSL://:29094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:29091,SSL://broker2:29094
+      # KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.server.keystore.jks
+      # KAFKA_SSL_KEY_PASSWORD: confluent
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: broker_sslkey_creds
+      KAFKA_SSL_KEY_CREDENTIALS: broker_sslkey_creds
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.server.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: broker_sslkey_creds
+      KAFKA_SSL_CLIENT_AUTH: "required"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1

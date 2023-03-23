@@ -1,8 +1,7 @@
 echo "Step 1: Copy over Root Certificate (CA)"
-cp ../ca-key .
-cp ../ca-cert .
-cp ../ca-cert.srl .
-
+cp ../security1/ca-key .
+cp ../security1/ca-cert .
+cp ../security1/ca-cert.srl .
 echo "Step 2: Server Keystore"
 keytool -genkey -keystore kafka.server.keystore.jks -validity 365 -storepass confluent -keypass confluent -dname "CN=broker2" -storetype pkcs12 -keyalg RSA
 echo "Step 3: Adding Certificate to Keystore"
