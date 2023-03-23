@@ -161,8 +161,22 @@ docker-compose exec broker1 kafka-mirrors --create --mirror-topic demo-cl-topic 
 
 You should see:
 
-```
+```bash
 Created topic demo-cl-topic.
+```
+
+## Produce to the topic on Broker 1; Consume from the mirror topic on Broker 2
+
+We're going to set up our console producer to produce (over TLS) to the `demo-cl-topic`:
+
+```bash
+docker-compose exec broker1 kafka-console-producer --bootstrap-server broker1:9093 --topic demo-cl-topic --producer.config /tmp/producer/client-ssl-auth.properties
+```
+
+Let's ensure the messages can be read from the Consumer on `broker2`:
+
+```bash
+docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:9094 --topic demo-cl-topic --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
 ```
 
 ## Troubleshooting
