@@ -30,4 +30,4 @@ keytool -keystore kafka.client.keystore.jks -alias CARoot -import -file ca-cert 
 echo "Step 13: Add Certificate Reply"
 keytool -keystore kafka.client.keystore.jks -import -file client-cert-signed -alias my-local-pc -storepass confluent -keypass confluent -noprompt
 echo "Step 14: Create PEM File"
-cat ca.crt ca.key > ca.pem
+cat ca-cert ca-key > ca.pem
