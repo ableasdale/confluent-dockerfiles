@@ -179,6 +179,15 @@ Let's ensure the messages can be read from the Consumer on `broker2`:
 docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:9094 --topic demo-cl-topic --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
 ```
 
+## Creating an Active/Active ClusterLink Setup
+
+The idea here is that you would configue bi-directional Cluster Linking, with a link from broker1 to broker2 and a link from broker2 back to broker1.
+
+As soon as both links have been created, you can add prefixes to both topics and configure the Consumers to subscribe to both topics - the diagram below shows the architecture in slightly more detail:
+
+[![Bi-Directional Cluster Linking](https://docs.confluent.io/cloud/current/_images/cluster-link-migrate-consumers-producers.png)](https://docs.confluent.io/cloud/current/multi-cloud/cluster-linking/migrate-cc.html#bidirectional-with-cluster-linking)
+
+
 ## Troubleshooting
 
 ### JVM Heap Issues when running `kafka-cluster-links`
