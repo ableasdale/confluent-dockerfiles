@@ -179,6 +179,83 @@ Let's ensure the messages can be read from the Consumer on `broker2`:
 docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:9094 --topic demo-cl-topic --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
 ```
 
+## Active / Passive setup - failover management
+
+Let's describe the mirror topic using the `kafka-mirrors` command:
+
+```bash
+docker-compose exec broker1 kafka-mirrors --describe --link my-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker1-link-config.properties
+```
+
+Note that the state (status) will be reported as `ACTIVE`:
+
+```bash
+docker-compose exec broker1 kafka-mirrors --describe --link my-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker1-link-config.properties
+Topic: demo-cl-topic	LinkName: my-link	LinkId: YJIZZLmoSiKW8_O50FA7hQ	SourceTopic: demo-cl-topic	State: ACTIVE	SourceTopicId: AAAAAAAAAAAAAAAAAAAAAA	StateTime: 2023-04-18 19:31:43
+	Partition: 0	State: ACTIVE	DestLogEndOffset: 3	LastFetchSourceHighWatermark: 3	Lag: 0	TimeSinceLastFetchMs: 369859
+```
+
+Let's kill the broker with the primary topic:
+
+```bash
+docker stop broker1
+```
+
+Re-run the command; it will fail because we're trying to run it against `broker1` (which is now stopped):
+
+```bash
+docker-compose exec broker1 kafka-mirrors --describe --link my-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker1-link-config.properties
+service "broker1" is not running container #1
+```
+
+Run the command against `broker2`:
+
+```bash
+docker-compose exec broker2 kafka-mirrors --describe --link my-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker2-link-config.properties
+```
+
+Note that the State is now `SOURCE_UNAVAILABLE`:
+
+```bash
+Topic: demo-cl-topic	LinkName: my-link	LinkId: YJIZZLmoSiKW8_O50FA7hQ	SourceTopic: demo-cl-topic	State: SOURCE_UNAVAILABLE	SourceTopicId: AAAAAAAAAAAAAAAAAAAAAA	StateTime: 2023-04-18 19:52:52
+	Partition: 0	State: SOURCE_UNAVAILABLE	DestLogEndOffset: 3	LastFetchSourceHighWatermark: 3	Lag: 0	TimeSinceLastFetchMs: 1338107
+```
+
+If you want to perform Disaster Recovery, you can promote the mirror topic to a "normal" topic or failover:
+
+```bash
+docker-compose exec broker2 kafka-mirrors --promote --link my-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker2-link-config.properties
+docker-compose exec broker2 kafka-mirrors --failover --link my-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker2-link-config.properties
+```
+
+You will now see:
+
+```bash
+Calculating max offset and ms lag for mirror topics: [demo-cl-topic]
+Finished calculating max offset lag and max lag ms for mirror topics: [demo-cl-topic]
+Request for stopping topic demo-cl-topic's mirror was successfully scheduled. Please use the describe command with the --pending-stopped-only option to monitor progress.
+```
+
+Describe the topic again:
+
+```bash
+docker-compose exec broker2 kafka-mirrors --describe --link my-link --bootstrap-server broker2:9094 --command-config /tmp/producer/broker2-link-config.properties
+Topic: demo-cl-topic	LinkName: my-link	LinkId: YJIZZLmoSiKW8_O50FA7hQ	SourceTopic: demo-cl-topic	State: SOURCE_UNAVAILABLE	SourceTopicId: AAAAAAAAAAAAAAAAAAAAAA	StateTime: 2023-04-18 19:52:52
+	Partition: 0	State: PENDING_STOPPED	DestLogEndOffset: 3	LastFetchSourceHighWatermark: -1	Lag: -1	TimeSinceLastFetchMs: 1681848069317
+```
+
+Write to the topic:
+
+```bash
+docker-compose exec broker2 kafka-console-producer --bootstrap-server broker2:9094 --topic demo-cl-topic --producer.config /tmp/producer/client-ssl-auth.properties
+```
+
+Consume from the topic:
+
+```bash
+docker-compose exec broker2 kafka-console-consumer --bootstrap-server broker2:9094 --topic demo-cl-topic --consumer.config /tmp/producer/client-ssl-auth.properties --from-beginning
+```
+
 ## Creating an Active/Active ClusterLink Setup
 
 The idea here is that you would configue bi-directional Cluster Linking, with a link from broker1 to broker2 and a link from broker2 back to broker1.
