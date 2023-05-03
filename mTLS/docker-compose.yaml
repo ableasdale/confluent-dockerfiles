@@ -20,12 +20,12 @@ services:
       - "9092:9092"
     volumes:
       - ./security:/etc/kafka/secrets/
-      - ./client:/tmp/producer/
+      # - .:/tmp/application/
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENERS: PLAINTEXT://:9091,SSL://:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9091,SSL://broker:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9091,SSL://localhost:9092
       KAFKA_SSL_KEYSTORE_FILENAME: kafka.server.keystore.jks
       KAFKA_SSL_KEYSTORE_CREDENTIALS: broker_sslkey_creds
       KAFKA_SSL_KEY_CREDENTIALS: broker_sslkey_creds
@@ -38,7 +38,7 @@ services:
       CONFLUENT_METRICS_REPORTER_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.client.keystore.jks
       CONFLUENT_METRICS_REPORTER_SSL_KEYSTORE_PASSWORD: confluent
       CONFLUENT_METRICS_REPORTER_SSL_KEY_PASSWORD: confluent
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:9092
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: localhost:9092
       CONFLUENT_METRICS_REPORTER_SECURITY_PROTOCOL: SSL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
