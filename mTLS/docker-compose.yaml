@@ -26,20 +26,25 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENERS: PLAINTEXT://:9091,SSL://:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9091,SSL://broker:9092
-      KAFKA_SSL_KEYSTORE_FILENAME: kafka.server.keystore.jks
+      # TLS Configuration
+      KAFKA_SSL_KEYSTORE_FILENAME: broker.keystore.jks
       KAFKA_SSL_KEYSTORE_CREDENTIALS: broker_sslkey_creds
       KAFKA_SSL_KEY_CREDENTIALS: broker_sslkey_creds
-      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.server.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_FILENAME: broker.truststore.jks
       KAFKA_SSL_TRUSTSTORE_CREDENTIALS: broker_sslkey_creds
       KAFKA_SSL_CLIENT_AUTH: "required"
+      # Metric Reporter (and TLS Configuration)
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-      CONFLUENT_METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.client.truststore.jks
+      KAFKA_CONFLUENT_METRICS_ENABLE: 'false'
+
+      CONFLUENT_METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/metrics.truststore.jks
       CONFLUENT_METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD: confluent
-      CONFLUENT_METRICS_REPORTER_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.client.keystore.jks
+      CONFLUENT_METRICS_REPORTER_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/metrics.keystore.jks
       CONFLUENT_METRICS_REPORTER_SSL_KEYSTORE_PASSWORD: confluent
       CONFLUENT_METRICS_REPORTER_SSL_KEY_PASSWORD: confluent
       CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:9092
       CONFLUENT_METRICS_REPORTER_SECURITY_PROTOCOL: SSL
+      # Replication Factors for standalone broker
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_DEFAULT_REPLICATION_FACTOR: 1
@@ -49,12 +54,12 @@ services:
       CONFLUENT_CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_CONFLUENT_METRICS_ENABLE: 'false'
       KAFKA_CONFLUENT_REPORTERS_TELEMETRY_AUTO_ENABLE: 'false'
       KAFKA_CONFLUENT_BALANCER_ENABLE: 'false'
       # Cluster Linking Specific Configuration
       KAFKA_PASSWORD_ENCODER_SECRET: broker_sslkey_creds
 
+# /etc/kafka/secrets/
   schema-registry:
     image: confluentinc/cp-schema-registry:${CP_TAG}
     hostname: schema-registry
@@ -68,7 +73,7 @@ services:
     volumes:
       - ./security:/etc/kafka/secrets/
     environment:
-      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "broker:9092"
       SCHEMA_REGISTRY_LISTENERS: "https://0.0.0.0:8081"
       SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: SSL
@@ -94,6 +99,7 @@ services:
     image: confluentinc/cp-enterprise-control-center:${CP_TAG}
     hostname: control-center
     container_name: control-center
+    restart: always
     depends_on:
       - zookeeper
       - broker
