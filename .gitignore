@@ -1,1 +1,10 @@
 .DS_Store
+
+*.csr
+*.jks
+*_creds
+*.crt
+*.pem
+ca-*
+cert-*
+client-cert*
