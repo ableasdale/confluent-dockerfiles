@@ -16,13 +16,13 @@ public class TLSProducer {
     public static void main(String[] args) {
         LOG.info("Hello world!");
         final Properties props = new Properties();
-        props.put("bootstrap.servers", "localhost:9092");
+        props.put("bootstrap.servers", "broker:9092");
 
         // This is the necessary configuration for configuring TLS/SSL on the Producer
         props.put("security.protocol", "SSL");
-        props.put("ssl.truststore.location", "security/kafka.client.truststore.jks");
+        props.put("ssl.truststore.location", "/etc/kafka/secrets/client.truststore.jks");
         props.put("ssl.truststore.password", "confluent");
-        props.put("ssl.keystore.location", "security/kafka.client.keystore.jks");
+        props.put("ssl.keystore.location", "/etc/kafka/secrets/client.keystore.jks");
         props.put("ssl.keystore.password", "confluent");
 
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");

@@ -101,14 +101,16 @@ services:
 
   rest-proxy:
     image: confluentinc/cp-kafka-rest:${CP_TAG}
+    hostname: rest-proxy
+    container_name: rest-proxy
+    restart: always
     depends_on:
       - zookeeper
       - broker
       - schema-registry
     ports:
       - 8082:8082
-    hostname: rest-proxy
-    container_name: rest-proxy
+
     volumes:
       - ./security:/etc/kafka/secrets/
     environment:
@@ -132,16 +134,13 @@ services:
       KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
       KAFKA_HEAP_OPTS: "-Xmx1G -Xms1G"
 
-
-## C3
-
   control-center:
     image: confluentinc/cp-enterprise-control-center:${CP_TAG}
     hostname: control-center
     container_name: control-center
+    restart: always
     volumes:
       - ./security:/etc/kafka/secrets/
-    restart: always
     depends_on:
       - zookeeper
       - broker
@@ -178,3 +177,43 @@ services:
                   -Djavax.net.ssl.keyStore=/etc/kafka/secrets/control-center.keystore.jks
                   -Djavax.net.ssl.keyStorePassword=confluent
       PORT: 9021
+
+  tools:
+    build:
+      context: ./tools
+    hostname: tools
+    container_name: tools
+    volumes:
+      - .:/tmp/mTLS
+      - ./security:/etc/kafka/secrets
+    entrypoint: /bin/bash
+    tty: true
+
+  newtools:
+    image: eclipse-temurin:17-jdk-jammy
+    hostname: newtools    
+    container_name: newtools
+    volumes:
+      - .:/tmp/app
+      - ./security:/etc/kafka/secrets
+    
+  # older kafka-tools  
+  kafka-tools:
+    build:
+      context: ./kafka-tools
+    depends_on:
+      - broker
+    container_name: kafka-tools
+    volumes:
+      - .:/tmp/app
+      - ./security:/etc/kafka/secrets
+    environment:
+      KAFKA_LOG4J_ROOT_LOGLEVEL: ERROR
+      KAFKA_SECURITY_PROTOCOL: SSL
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
+      KAFKA_HEAP_OPTS: "-Xmx1G -Xms1G"
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka-tools.truststore.jks
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka-tools.keystore.jks
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: confluent
+      KAFKA_SSL_KEYSTORE_PASSWORD: confluent
+      KAFKA_SSL_KEY_PASSWORD: confluent

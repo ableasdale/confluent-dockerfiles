@@ -1,9 +1,14 @@
 plugins {
     id("java")
+    id("application")
 }
 
 group = "org.example"
 version = "1.0-SNAPSHOT"
+
+application {
+    mainClass.set("io.confluent.csta.TLSProducer")
+}
 
 repositories {
     mavenCentral()

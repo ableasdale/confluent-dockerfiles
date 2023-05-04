@@ -14,3 +14,21 @@ Start both clusters using the provided `docker-compose.yaml` file:
 ```bash
 docker-compose up
 ```
+
+TOOLS
+
+```bash
+docker exec -it tools bash
+```
+
+Produce some data (using TLS)
+
+```bash
+cd /tmp/mTLS
+./gradlew run
+```
+
+## Endpoints
+
+- <http://localhost:9021/>
+- <http://localhost:8082/>
