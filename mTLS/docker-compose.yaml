@@ -110,12 +110,11 @@ services:
       - schema-registry
     ports:
       - 8082:8082
-
     volumes:
       - ./security:/etc/kafka/secrets/
     environment:
       KAFKA_REST_LOG4J_ROOT_LOGLEVEL: ERROR
-      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "HTTPS"
       KAFKA_REST_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/rest-proxy.truststore.jks
       KAFKA_REST_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/rest-proxy.keystore.jks
       KAFKA_REST_SSL_TRUSTSTORE_PASSWORD: confluent
@@ -131,7 +130,7 @@ services:
       KAFKA_REST_CLIENT_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/rest-proxy.keystore.jks
       KAFKA_REST_CLIENT_SSL_KEYSTORE_PASSWORD: confluent
       KAFKA_REST_CLIENT_SSL_KEY_PASSWORD: confluent
-      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+      KAFKA_REST_LISTENERS: "https://rest-proxy:8082"
       KAFKA_HEAP_OPTS: "-Xmx1G -Xms1G"
 
   control-center:
