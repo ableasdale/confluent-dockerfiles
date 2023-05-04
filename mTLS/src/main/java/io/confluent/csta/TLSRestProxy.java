@@ -23,6 +23,10 @@ public class TLSRestProxy {
         // GET /clusters/{cluster_id}/broker-configs
         ClientTools.httpGet(httpClient, "https://rest-proxy:8082/v3/clusters/%s/broker-configs".formatted(clusterId));
 
+        ClientTools.httpGet(httpClient, "https://rest-proxy:8082/v3/clusters/%s/topics/%s".formatted(clusterId, Config.TOPIC));
+
+        // GET /clusters/{cluster_id}/brokers
+        ClientTools.httpGet(httpClient, "https://rest-proxy:8082/v3/clusters/%s/acls".formatted(clusterId));
 
         /*
         LOG.info("recordsTotal : " + jsonObject.get("recordsTotal"));

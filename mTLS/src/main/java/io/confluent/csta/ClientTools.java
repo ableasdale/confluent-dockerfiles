@@ -85,7 +85,7 @@ public class ClientTools {
         try {
             LOG.info("URL: "+url);
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            LOG.info("Code: %d".formatted(response.statusCode()));
+            LOG.info("HTTP Response code: %d".formatted(response.statusCode()));
             LOG.info("Body: %s".formatted(response.body()));
         } catch (IOException e) {
             LOG.error("%s exception encountered:\n%s".formatted(e.toString(), ExceptionUtils.getStackTrace(e)));
