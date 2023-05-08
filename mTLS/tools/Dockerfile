@@ -7,7 +7,7 @@ ENV CONFLUENT_HOME=/usr \
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         git \
-        dig \
+        dnsutils \
         openssl \
         curl \
         wget \
