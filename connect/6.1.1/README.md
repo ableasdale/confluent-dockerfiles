@@ -71,3 +71,36 @@ Logging for:
 ```java
 io.confluent.connect.replicator.offsets.OffsetManager
 ```
+
+## ksqlDB
+
+Investigating using ksqlDB to explore the topics and connectors; to get started, run:
+
+```bash
+ksql
+```
+
+### List topics
+
+```sql
+show topics;
+```
+
+### To show ALL topics
+
+```sql
+show all topics;
+```
+
+### List Connectors
+
+```sql
+show connectors;
+```
+
+TODO:
+
+```sql
+SELECT * FROM docker-connect-configs;
+select * from replicate-me.replica;
+```
