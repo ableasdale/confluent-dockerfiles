@@ -1,0 +1,22 @@
+# CREATE TABLE replicated WITH (KAFKA_TOPIC='replicate-me.replica', VALUE_FORMAT='NONE');
+create stream replicated with(KAFKA_TOPIC='replicate-me.replica',value_format='NONE');
+CREATE TABLE replicated WITH (KAFKA_TOPIC='replicate-me.replica');
+create stream replicated with(KAFKA_TOPIC='replicate-me.replica',value_format='NONE');
+select * from 'replicate-me.replica';
+
+
+CREATE STREAM KEYLESS_STREAM (
+    VAL STRING
+  ) WITH (
+    KEY_FORMAT='NONE',
+    VALUE_FORMAT='NONE',
+    KAFKA_TOPIC='replicate-me.replica'
+  );
+
+
+TODO:
+
+```sql
+SELECT * FROM docker-connect-configs;
+select * from replicate-me.replica;
+```
