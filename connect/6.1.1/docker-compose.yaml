@@ -15,11 +15,9 @@ services:
   kafka:
     container_name: kafka
     hostname: kafka
-    #image: confluentinc/cp-enterprise-kafka:${CP_TAG}
     image: confluentinc/cp-server:${CP_TAG}
     ports:
       - '9092:9092'
-    #  - '9102:9102'
     depends_on:
       - zookeeper
     restart: always
@@ -53,14 +51,14 @@ services:
     depends_on:
       - kafka
       - schema-registry
-      - connect1
+      - connect
       - ksqldb-server
     restart: always
     environment:
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       #CONTROL_CENTER_NAME: "C3"
       CONTROL_CENTER_BOOTSTRAP_SERVERS: kafka:29092
-      CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: connect1:8083
+      CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: connect:8083
       #CONTROL_CENTER_CONNECT_CLUSTER: http://connect1:8083
       #CONTROL_CENTER_CONNECT_CONNECT1_CLUSTER: https://connect1:8083
       CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
@@ -102,9 +100,9 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
 
-  connect1:
-    container_name: connect1
-    hostname: connect1
+  connect:
+    container_name: connect
+    hostname: connect
     image: confluentinc/cp-enterprise-replicator:${CP_TAG}
     ports:
       - '8083:8083'
@@ -116,8 +114,6 @@ services:
     environment:
       CLASSPATH: /usr/share/java/kafka-connect-replicator/replicator-rest-extension-${CP_TAG}.jar:/usr/share/java/monitoring-interceptors/*
       CONNECT_BOOTSTRAP_SERVERS: kafka:29092
-      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
-      CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
       CONNECT_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY: All
       CONNECT_CONSUMER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: kafka:29092
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor
@@ -128,19 +124,22 @@ services:
       CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR
       CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
-      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
-      CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
       CONNECT_PLUGIN_PATH: /usr/share/java
       CONNECT_PRODUCER_CLIENT_ID: connect-worker-producer
       CONNECT_PRODUCER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: kafka:29092
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor
-      CONNECT_REST_ADVERTISED_HOST_NAME: connect1
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect
       CONNECT_REST_EXTENSION_CLASSES: io.confluent.connect.replicator.monitoring.ReplicatorMonitoringExtension
       CONNECT_REST_PORT: 8083
-      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
-      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      # Connect Custom Topics
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_STATUS_STORAGE_TOPIC: connect-status
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
 
 # ksqlDB components below
 
@@ -155,20 +154,21 @@ services:
 
   ksqldb-server:
     container_name: ksqldb-server
+    hostname: ksqldb-server
+    image: confluentinc/cp-ksqldb-server:${CP_TAG}
+    ports:
+      - '8088:8088'
     depends_on:
       - kafka
-      - connect1
+      - connect
+    restart: always
     environment:
       KSQL_BOOTSTRAP_SERVERS: kafka:29092
       KSQL_CACHE_MAX_BYTES_BUFFERING: 0
       KSQL_HOST_NAME: ksqldb-server
-      KSQL_KSQL_CONNECT_URL: http://kafka-connect-01:8083
+      KSQL_KSQL_CONNECT_URL: http://connect:8083
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: 'true'
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 1
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       KSQL_LISTENERS: http://0.0.0.0:8088
-    hostname: ksqldb-server
-    image: confluentinc/cp-ksqldb-server:${CP_TAG}
-    ports:
-      - '8088:8088'
