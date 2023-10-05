@@ -15,7 +15,7 @@ watch -d curl localhost:8083
 When the endpoint is ready, you should see:
 
 ```bash
-{"version":"6.1.1-ce","commit":"73deb3aeb1f8647c","kafka_cluster_id":"4qEIYsA0Q3SohxSgbUX93w"}
+{"version":"7.5.0-ce","commit":"be816cdb62b83d78","kafka_cluster_id":"bTk1h9nGSAitTieoK2o7AA"}
 ```
 
 ## Alternative ways to get the `cluster.id`
@@ -49,13 +49,19 @@ For example:
 ```bash
 curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" \
           --data '{"topic_name": "replicate-me", "partitions_count": 4, "replication_factor": 1}' \
-          "http://localhost:8082/v3/clusters/4qEIYsA0Q3SohxSgbUX93w/topics" | jq
+          "http://localhost:8082/v3/clusters/bTk1h9nGSAitTieoK2o7AA/topics" | jq
+```
+
+Or, alternately, use `kafka-topics` to create the initial topic:
+
+```bash
+docker-compose exec kafka kafka-topics --bootstrap-server kafka:29092 --create --topic replicate-me --partitions 4 --replication-factor 1
 ```
 
 ## Create the replicator instance
 
 ```bash
-./replicator.sh
+./create_replicator.sh
 ```
 
 ## Produce to the source topic
@@ -138,4 +144,22 @@ docker-compose exec kafka kafka-producer-perf-test --throughput -1 --num-records
 
 ```bash
 curl -X POST http://localhost:8083/connectors/replicator/tasks/0/restart | jq
+```
+
+## SSH to the Connect instance
+
+```bash
+docker-compose exec connect bash
+```
+
+## View the Worker properties (on the Connect instance)
+
+```bash
+more /etc/kafka/connect-distributed.properties
+```
+
+## Tail the Connect Logs
+
+```bash
+docker logs -f connect --tail 10
 ```

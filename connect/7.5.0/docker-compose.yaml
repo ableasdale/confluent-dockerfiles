@@ -52,7 +52,6 @@ services:
       - kafka
       - schema-registry
       - connect
-      - ksqldb-server
     restart: always
     environment:
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
@@ -60,8 +59,6 @@ services:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: kafka:29092
       CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: connect:8083
       CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
-      CONTROL_CENTER_KSQL_KSQLDB1_ADVERTISED_URL: http://localhost:8088
-      CONTROL_CENTER_KSQL_KSQLDB1_URL: http://ksqldb-server:8088
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
       CONTROL_CENTER_REPLICATION_FACTOR: 1
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
@@ -118,8 +115,8 @@ services:
       CONNECT_GROUP_ID: compose-connect-group
       CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: '[%d] %p %X{connector.context}%m (%c:%L)%n'
-      CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR,io.confluent.connect.replicator.offsets.OffsetManager=DEBUG
+      # CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: '[%d] %p %X{connector.context}%m (%c:%L)%n'
+      # CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR,io.confluent.connect.replicator.offsets.OffsetManager=DEBUG
       # CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
       CONNECT_PLUGIN_PATH: /usr/share/java
@@ -138,35 +135,3 @@ services:
       CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
-
-# ksqlDB components below
-
-  ksqldb-cli:
-    container_name: ksqldb-cli
-    hostname: ksqldb-cli
-    image: confluentinc/cp-ksqldb-cli:${CP_TAG}
-    depends_on:
-      - ksqldb-server
-    entrypoint: /bin/sh
-    tty: true
-
-  ksqldb-server:
-    container_name: ksqldb-server
-    hostname: ksqldb-server
-    image: confluentinc/cp-ksqldb-server:${CP_TAG}
-    ports:
-      - '8088:8088'
-    depends_on:
-      - kafka
-      - connect
-    restart: always
-    environment:
-      KSQL_BOOTSTRAP_SERVERS: kafka:29092
-      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
-      KSQL_HOST_NAME: ksqldb-server
-      KSQL_KSQL_CONNECT_URL: http://connect:8083
-      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
-      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: 'true'
-      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 1
-      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      KSQL_LISTENERS: http://0.0.0.0:8088

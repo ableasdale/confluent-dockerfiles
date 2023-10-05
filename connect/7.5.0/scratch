@@ -20,3 +20,29 @@ TODO:
 SELECT * FROM docker-connect-configs;
 select * from replicate-me.replica;
 ```
+
+
+
+[2023-10-05 18:48:26,737] ERROR Commit of offsets threw an unexpected exception: {replicate-me-3=OffsetAndMetadata{offset=9669677, leaderEpoch=null, metadata=''}} (io.confluent.connect.replicator.offsets.ConsumerOffsetsTopicCommitter)
+org.apache.kafka.clients.consumer.CommitFailedException: Commit cannot be completed since the group has already rebalanced and assigned the partitions to another member. This means that the time between subsequent calls to poll() was longer than the configured max.poll.interval.ms, which typically implies that the poll loop is spending too much time message processing. You can address this either by increasing max.poll.interval.ms or by reducing the maximum size of batches returned in poll() with max.poll.records.
+
+
+```
+Commit of offsets threw an unexpected exception: {replicate-me-3=OffsetAndMetadata{offset=489066, leaderEpoch=null, metadata=''}} (io.confluent.connect.replicator.offsets.ConsumerOffsetsTopicCommitter)
+2023-10-05 18:30:40 connect          | org.apache.kafka.clients.consumer.CommitFailedException: Commit cannot be completed since the group has already rebalanced and assigned the partitions to another member. This means that the time between subsequent calls to poll() was longer than the configured max.poll.interval.ms, which typically implies that the poll loop is spending too much time message processing. You can address this either by increasing max.poll.interval.ms or by reducing the maximum size of batches returned in poll() with max.poll.records.
+```
+
+[2023-10-05 17:41:21,709] INFO [Consumer clientId=replicator-1, groupId=compose-connect-group] OffsetCommit failed with Generation{generationId=-1, memberId='', protocol='null'}: The coordinator is not aware of this member. (org.apache.kafka.clients.consumer.internals.ConsumerCoordinator)
+[2023-10-05 17:41:21,710] INFO [Consumer clientId=replicator-1, groupId=compose-connect-group] Resetting generation and member id due to: encountered UNKNOWN_MEMBER_ID from OFFSET_COMMIT response (org.apache.kafka.clients.consumer.internals.ConsumerCoordinator)
+[2023-10-05 17:41:21,710] INFO [Consumer clientId=replicator-1, groupId=compose-connect-group] Request joining group due to: encountered UNKNOWN_MEMBER_ID from OFFSET_COMMIT response (org.apache.kafka.clients.consumer.internals.ConsumerCoordinator)
+[2023-10-05 17:41:21,710] WARN Commit of offsets threw an unexpected exception: {replicate-me-3=OffsetAndMetadata{offset=681937, leaderEpoch=null, metadata=''}} (io.confluent.connect.replicator.offsets.ConsumerOffsetsTopicCommitter)
+org.apache.kafka.clients.consumer.CommitFailedException: Commit cannot be completed since the group has already rebalanced and assigned the partitions to another member. This means that the time between subsequent calls to poll() was longer than the configured max.poll.interval.ms, which typically implies that the poll loop is spending too much time message processing. You can address this either by increasing max.poll.interval.ms or by reducing the maximum size of batches returned in poll() with max.poll.records.
+
+
+[2023-10-05 17:53:50,814] ERROR [Consumer clientId=replicator-3, groupId=compose-connect-group] Offset commit failed on partition __consumer_timestamps-7 at offset 26: The coordinator is not aware of this member. (org.apache.kafka.clients.consumer.internals.ConsumerCoordinator)
+[2023-10-05 17:53:50,815] INFO [Consumer clientId=replicator-3, groupId=compose-connect-group] OffsetCommit failed with Generation{generationId=-1, memberId='', protocol='null'}: The coordinator is not aware of this member. (org.apache.kafka.clients.consumer.internals.ConsumerCoordinator)
+[2023-10-05 17:53:50,815] INFO [Consumer clientId=replicator-3, groupId=compose-connect-group] Resetting generation and member id due to: encountered UNKNOWN_MEMBER_ID from OFFSET_COMMIT response (org.apache.kafka.clients.consumer.internals.ConsumerCoordinator)
+[2023-10-05 17:53:50,815] INFO [Consumer clientId=replicator-3, groupId=compose-connect-group] Request joining group due to: encountered UNKNOWN_MEMBER_ID from OFFSET_COMMIT response (org.apache.kafka.clients.consumer.internals.ConsumerCoordinator)
+[2023-10-05 17:53:50,815] WARN Commit of offsets threw an unexpected exception: {__consumer_timestamps-7=OffsetAndMetadata{offset=26, leaderEpoch=null, metadata=''}, replicate-me-1=OffsetAndMetadata{offset=4255894, leaderEpoch=null, metadata=''}} (io.confluent.connect.replicator.offsets.ConsumerOffsetsTopicCommitter)
+org.apache.kafka.clients.consumer.CommitFailedException: Commit cannot be completed since the group has already rebalanced and assigned the partitions to another member. This means that the time between subsequent calls to poll() was longer than the configured max.poll.interval.ms, which typically implies that the poll loop is spending too much time message processing. You can address this either by increasing max.poll.interval.ms or by reducing the maximum size of batches returned in poll() with max.poll.records.
+
