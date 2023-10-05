@@ -64,12 +64,20 @@ docker-compose exec kafka /usr/bin/kafka-console-producer --bootstrap-server kaf
 docker-compose exec kafka /usr/bin/kafka-console-consumer --bootstrap-server kafka:29092 --topic replicate-me.replica --from-beginning
 ```
 
-### Debug notes below
+## Debugging
 
 Logging for:
 
 ```java
 io.confluent.connect.replicator.offsets.OffsetManager
+```
+
+### Check `connect-offsets`
+
+View the offsets `connect-offsets` topic:
+
+```bash
+docker exec kafka kafka-console-consumer --bootstrap-server kafka:29092 --topic connect-offsets --from-beginning --property print.key=true --property print.timestamp=true
 ```
 
 ## ksqlDB
@@ -104,3 +112,39 @@ TODO:
 SELECT * FROM docker-connect-configs;
 select * from replicate-me.replica;
 ```
+
+```bash
+docker-compose exec kafka /usr/bin/kafka-console-consumer \
+  --from-beginning \
+  --topic __consumer_offsets \
+  --bootstrap-server localhost:9092 \
+  --formatter \
+  "kafka.coordinator.group.GroupMetadataManager\$OffsetsMessageFormatter"
+```
+
+```bash
+docker-compose exec kafka /usr/bin/kafka-console-consumer \
+  --from-beginning \
+  --topic docker-connect-offsets \
+  --bootstrap-server localhost:9092 \
+  --formatter \
+  "kafka.coordinator.group.GroupMetadataManager\$OffsetsMessageFormatter"
+```
+
+docker exec kafka kafka-console-consumer --bootstrap-server kafka:29092 --topic docker-connect-offsets --from-beginning --property print.key=true --property print.timestamp=true
+
+docker exec kafka /usr/bin/kafka-topics --bootstrap-server kafka:29092 --topic docker-consumer-offsets --describe
+
+
+docker exec connect kafka-console-consumer --bootstrap-server kafka:29092 --topic docker-connect-offsets --from-beginning --property print.key=true --property print.timestamp=true
+
+
+## Viewing the `__consumer_offsets` topic
+
+Note that this approach works for `__consumer_offsets` but doesn't work for `connect-offsets`
+
+```bash
+docker-compose exec kafka kafka-console-consumer --from-beginning --topic __consumer_offsets --bootstrap-server kafka:29092 --formatter "kafka.coordinator.group.GroupMetadataManager\$OffsetsMessageFormatter"
+```
+
+

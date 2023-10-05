@@ -119,8 +119,8 @@ services:
       CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: '[%d] %p %X{connector.context}%m (%c:%L)%n'
-      CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR
-      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR,io.confluent.connect.replicator.offsets.OffsetManager=DEBUG
+      # CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
       CONNECT_PLUGIN_PATH: /usr/share/java
       CONNECT_PRODUCER_CLIENT_ID: connect-worker-producer
