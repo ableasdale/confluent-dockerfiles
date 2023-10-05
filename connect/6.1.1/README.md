@@ -1,12 +1,24 @@
 # To run through a simple test case
 
-Wait for everything to become available
+Start the containers:
+
+```bash
+docker-compose -d up
+```
+
+Wait for the ReST endpoint to become available:
 
 ```bash
 watch -d curl localhost:8083
 ```
 
-## Get the `cluster.id`
+When the endpoint is ready, you should see:
+
+```bash
+{"version":"6.1.1-ce","commit":"73deb3aeb1f8647c","kafka_cluster_id":"4qEIYsA0Q3SohxSgbUX93w"}
+```
+
+## Alternative ways to get the `cluster.id`
 
 ```bash
 curl localhost:8082/v3/clusters | jq '."data"'
@@ -104,13 +116,6 @@ show all topics;
 
 ```sql
 show connectors;
-```
-
-TODO:
-
-```sql
-SELECT * FROM docker-connect-configs;
-select * from replicate-me.replica;
 ```
 
 ## Viewing the `__consumer_offsets` topic
