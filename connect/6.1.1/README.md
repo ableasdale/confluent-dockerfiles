@@ -37,7 +37,7 @@ For example:
 ```bash
 curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" \
           --data '{"topic_name": "replicate-me", "partitions_count": 4, "replication_factor": 1}' \
-          "http://localhost:8082/v3/clusters/zqhe9SrmSrizZOIWN76blA/topics" | jq
+          "http://localhost:8082/v3/clusters/OJQRLGWuRvyyKyin3L_Yfw/topics" | jq
 ```
 
 ## Create the replicator instance
@@ -113,32 +113,6 @@ SELECT * FROM docker-connect-configs;
 select * from replicate-me.replica;
 ```
 
-```bash
-docker-compose exec kafka /usr/bin/kafka-console-consumer \
-  --from-beginning \
-  --topic __consumer_offsets \
-  --bootstrap-server localhost:9092 \
-  --formatter \
-  "kafka.coordinator.group.GroupMetadataManager\$OffsetsMessageFormatter"
-```
-
-```bash
-docker-compose exec kafka /usr/bin/kafka-console-consumer \
-  --from-beginning \
-  --topic docker-connect-offsets \
-  --bootstrap-server localhost:9092 \
-  --formatter \
-  "kafka.coordinator.group.GroupMetadataManager\$OffsetsMessageFormatter"
-```
-
-docker exec kafka kafka-console-consumer --bootstrap-server kafka:29092 --topic docker-connect-offsets --from-beginning --property print.key=true --property print.timestamp=true
-
-docker exec kafka /usr/bin/kafka-topics --bootstrap-server kafka:29092 --topic docker-consumer-offsets --describe
-
-
-docker exec connect kafka-console-consumer --bootstrap-server kafka:29092 --topic docker-connect-offsets --from-beginning --property print.key=true --property print.timestamp=true
-
-
 ## Viewing the `__consumer_offsets` topic
 
 Note that this approach works for `__consumer_offsets` but doesn't work for `connect-offsets`
@@ -147,4 +121,22 @@ Note that this approach works for `__consumer_offsets` but doesn't work for `con
 docker-compose exec kafka kafka-console-consumer --from-beginning --topic __consumer_offsets --bootstrap-server kafka:29092 --formatter "kafka.coordinator.group.GroupMetadataManager\$OffsetsMessageFormatter"
 ```
 
+# CREATE TABLE replicated WITH (KAFKA_TOPIC='replicate-me.replica', VALUE_FORMAT='NONE');
+create stream replicated with(KAFKA_TOPIC='replicate-me.replica',value_format='NONE');
+CREATE TABLE replicated WITH (KAFKA_TOPIC='replicate-me.replica');
+create stream replicated with(KAFKA_TOPIC='replicate-me.replica',value_format='NONE');
+select * from 'replicate-me.replica';
 
+
+CREATE STREAM KEYLESS_STREAM (
+    VAL STRING
+  ) WITH (
+    KEY_FORMAT='NONE',
+    VALUE_FORMAT='NONE',
+    KAFKA_TOPIC='replicate-me.replica'
+  );
+
+## restart a task:
+
+POST:
+/connectors/CONNECTORNAME/tasks/0/restart
