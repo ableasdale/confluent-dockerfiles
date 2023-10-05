@@ -140,6 +140,10 @@ To test / performance tune Replicator, the `kafka-producer-perf-test` gives you 
 docker-compose exec kafka kafka-producer-perf-test --throughput -1 --num-records 1000000 --topic replicate-me --record-size 1000 --producer-props bootstrap.servers=kafka:29092 acks=all
 ```
 
+```bash
+docker-compose exec kafka kafka-producer-perf-test --throughput 50000 --num-records 10000000 --topic replicate-me --record-size 100 --producer-props bootstrap.servers=kafka:29092 acks=all compression.type=lz4 batch.size=800000
+```
+
 ## Restart a single Replicator Task
 
 ```bash

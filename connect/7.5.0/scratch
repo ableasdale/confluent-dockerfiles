@@ -21,7 +21,11 @@ SELECT * FROM docker-connect-configs;
 select * from replicate-me.replica;
 ```
 
-
+      "consumer.override.session.timeout.ms": "20000",
+      "src.consumer.heartbeat.interval.ms": "6000",
+      "src.consumer.offset.flush.timeout.ms": "10000",
+      "src.consumer.max.poll.records": "50",
+      
 
 [2023-10-05 18:48:26,737] ERROR Commit of offsets threw an unexpected exception: {replicate-me-3=OffsetAndMetadata{offset=9669677, leaderEpoch=null, metadata=''}} (io.confluent.connect.replicator.offsets.ConsumerOffsetsTopicCommitter)
 org.apache.kafka.clients.consumer.CommitFailedException: Commit cannot be completed since the group has already rebalanced and assigned the partitions to another member. This means that the time between subsequent calls to poll() was longer than the configured max.poll.interval.ms, which typically implies that the poll loop is spending too much time message processing. You can address this either by increasing max.poll.interval.ms or by reducing the maximum size of batches returned in poll() with max.poll.records.
