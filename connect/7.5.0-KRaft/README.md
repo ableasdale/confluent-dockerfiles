@@ -143,7 +143,7 @@ docker-compose exec kafka kafka-producer-perf-test --throughput -1 --num-records
 For a larger batch (and a longer running test):
 
 ```bash
-docker-compose exec kafka kafka-producer-perf-test --throughput 50000 --num-records 10000000 --topic replicate-me --record-size 100 --producer-props bootstrap.servers=kafka:29092 acks=all compression.type=lz4 batch.size=800000 linger.ms=100
+docker-compose exec broker kafka-producer-perf-test --throughput 50000 --num-records 10000000 --topic replicate-me --record-size 100 --producer-props bootstrap.servers=broker:29092 acks=all compression.type=lz4 batch.size=800000 linger.ms=100
 ```
 
 ## Restart a single Replicator Task
