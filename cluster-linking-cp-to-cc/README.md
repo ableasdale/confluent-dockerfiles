@@ -48,7 +48,7 @@ Give it a name and download the text file.
 
 ## Create the configuration and the Secret
 
-To create the secret for Confluent Cloud, you need to combine the key and secret to create a base64-encoded string:
+To create the secret for Confluent Cloud, you need to combine the key and secret from the text file that you have just downloaded to create a base64-encoded string:
 
 ```bash
 echo -n "KEY:SECRET" | base64
