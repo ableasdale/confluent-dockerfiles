@@ -1,0 +1,1 @@
+<< Rename to ccloud_creds and paste the contents of echo -n "KEY:SECRET" | base64 into this file >>
