@@ -82,7 +82,13 @@ Now we're ready to start preparing the Cluster Link.
 
 ## Create the Cluster Link on the Confluent Cloud side
 
+Open `client/ccloud-cluster-link.properties` and replace the following sections:
 
+- << dedicated instance bootstrap host >> with your **bootstrap host**.
+- << KEY >> with your API Key
+- << SECRET >> with your Secret
+
+Prior to modification, the file should look like this
 
 ```properties
 bootstrap.servers=<< dedicated instance bootstrap host >>:9092
