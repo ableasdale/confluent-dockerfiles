@@ -88,7 +88,7 @@ Open `client/ccloud-cluster-link.properties` and replace the following sections:
 - << KEY >> with your API Key
 - << SECRET >> with your Secret
 
-Prior to modification, the file should look like this
+Prior to modification, the file should look like this:
 
 ```properties
 bootstrap.servers=<< dedicated instance bootstrap host >>:9092
@@ -166,6 +166,14 @@ In order to complete the link and to start mirroring topics, we now need to crea
 
 ## Create the Cluster Link on the Confluent Platform (aka: "on prem") side
 
+Open `client/cp-cluster-link.properties` and replace the following sections:
+
+- << dedicated instance bootstrap host >> with your **bootstrap host**.
+- << KEY >> with your API Key
+- << SECRET >> with your Secret
+
+Prior to modification, the file should look like this:
+
 ```properties
 link.mode=SOURCE
 connection.mode=OUTBOUND
@@ -181,11 +189,80 @@ local.security.protocol=PLAINTEXT
 local.sasl.mechanism=PLAIN
 ```
 
-
-### notes below
-
-let's ssh to the CP instance:
+To set up the link from the source, let's now `ssh` to the CP instance:
 
 ```bash
 docker-compose exec broker1 bash
+```
+
+```bash
+kafka-cluster-links --bootstrap-server localhost:9091 --create --link on-prem-link --config-file /tmp/client/cp-cluster-link.properties --cluster-id lkc-23pgvq --command-config /tmp/client/cp-config.properties
+```
+
+You should see:
+
+```
+Cluster link 'on-prem-link' creation successfully completed.
+```
+
+Create a topic, produce to it and mirror it
+
+```bash
+kafka-topics --bootstrap-server broker1:9091 --topic cluster-link-topic --replication-factor 1 --partitions 1 --create --config min.insync.replicas=1'
+```
+
+You should see:
+
+```
+Created topic cluster-link-topic.
+```
+
+Let's run the `kafka-console-producer` and write some data to the topic:
+
+```bash
+kafka-console-producer --bootstrap-server broker1:9091 --topic cluster-link-topic
+```
+
+Now let's mirror the topic over the Cluster Link (note - maybe this needs to be done on the other side?):
+
+```bash
+kafka-mirrors --create --mirror-topic cluster-link-topic --link on-prem-link --bootstrap-server broker1:9091
+```
+
+It does - this mirror is created in CCloud (not in the container shell!):
+
+```bash
+confluent kafka mirror create cluster-link-topic --link on-prem-link
+```
+
+You should see:
+
+```
+Created mirror topic "cluster-link-topic".
+```
+
+You'll see evidence that the messages are now being mirrored back in the Confluent Cloud UI:
+
+![Cluster Link](images/mirroring.png)
+
+Let's consume from the mirror topic.  First we need to create an API Key to allow us to read from the topic:
+
+```bash
+confluent api-key create --resource <cluster-id>
+```
+
+Where <cluster-id> is the ID for your dedicated cluster.
+
+Note that this will output a Key and Secret to stdout - store it for use later.
+
+Using the API Key, we now need to associate it with our cluster:
+
+```bash
+confluent api-key use <API Key> --resource <cluster-id>
+```
+
+You should now be able to read the mirror topic by running:
+
+```bash
+confluent kafka topic consume -b cluster-link-topic
 ```
