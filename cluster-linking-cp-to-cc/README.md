@@ -162,9 +162,24 @@ To view the link in Confluent Cloud, you can go to <https://confluent.cloud/clus
 
 ![Cluster Link](images/clusterlink.png)
 
+In order to complete the link and to start mirroring topics, we now need to create the link going from the source (CP) cluster.
+
 ## Create the Cluster Link on the Confluent Platform (aka: "on prem") side
 
+```properties
+link.mode=SOURCE
+connection.mode=OUTBOUND
 
+bootstrap.servers=<< dedicated instance bootstrap host >>:9092
+ssl.endpoint.identification.algorithm=https
+security.protocol=SASL_SSL
+sasl.mechanism=PLAIN
+sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="<< KEY >>" password="<< SECRET >>";
+
+local.listener.name=PLAINTEXT_HOST
+local.security.protocol=PLAINTEXT
+local.sasl.mechanism=PLAIN
+```
 
 
 ### notes below
