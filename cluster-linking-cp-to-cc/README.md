@@ -36,7 +36,7 @@ Wait for the cluster to be provisioned:
 
 Select the cluster as soon as it has been provisioned:
 
-![Provisioning](images/provisioning.png)
+![Provisioning](images/provisioned.png)
 
 On the left-hand menu, select **API Keys** and **Create Key**
 
@@ -47,7 +47,6 @@ For scope, give the key Global Access:
 Give it a name and download the text file.
 
 ## Create the configuration and the Secret
-
 
 To create the secret for Confluent Cloud:
 
