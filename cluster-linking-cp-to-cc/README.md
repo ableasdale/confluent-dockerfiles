@@ -48,11 +48,37 @@ Give it a name and download the text file.
 
 ## Create the configuration and the Secret
 
-To create the secret for Confluent Cloud:
+To create the secret for Confluent Cloud, you need to combine the key and secret to create a base64-encoded string:
 
 ```bash
 echo -n "KEY:SECRET" | base64
 ```
+
+Paste the output from this command into `security/ccloud_creds`, replacing the placeholder line with your command output.
+
+In a terminal session, start up the Confluent Platform side to create your broker and zookeeper instances:
+
+```bash
+docker-compose up
+```
+
+As soon as this is done, we will need to get the Cluster ID - to do this, we can run the `kafka-cluster` command on the container:
+
+```bash
+docker-compose exec broker1 kafka-cluster cluster-id --bootstrap-server broker1:9091
+```
+
+You should see something like:
+
+```bash
+Cluster ID: ZWe3nnZwTrKSM0aM2doAxQ
+```
+
+We will also need the bootstrap server URL for configuration to take place; to do this click on **Cluster Settings** under the Cluster Overview section of the navigation; the endpoints will be listed under that section:
+
+![Endpoints](images/endpoints.png)
+
+Now we're ready to start preparing the Cluster Link.
 
 ## Create the Cluster Link on the Confluent Cloud side
 
@@ -74,3 +100,14 @@ local.sasl.mechanism=PLAIN
 ```
 
 ## Create the Cluster Link on the Confluent Platform (aka: "on prem") side
+
+
+
+
+### notes below
+
+let's ssh to the CP instance:
+
+```bash
+docker-compose exec broker1 bash
+```
