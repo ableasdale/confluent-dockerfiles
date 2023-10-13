@@ -105,6 +105,63 @@ local.security.protocol=PLAINTEXT
 local.sasl.mechanism=PLAIN
 ```
 
+Now log in using the Confluent CLI and run the following:
+
+Set the correct environment for the dedicated cluster:
+
+```bash
+confluent environment list
+confluent environment use <id>
+```
+
+Select the dedicated cluster within the environment:
+
+```bash
+confluent kafka cluster list
+confluent kafka cluster use <id>
+```
+
+```bash
+confluent kafka link create on-prem-link --cluster <ccloud cluster> --source-cluster <cp cluster> --config-file client/ccloud-cluster-link.properties
+```
+
+For example:
+
+```bash
+confluent kafka link create on-prem-link --cluster lkc-23pgvq --source-cluster ZWe3nnZwTrKSM0aM2doAxQ --config-file client/ccloud-cluster-link.properties
+```
+
+You should see:
+
+```bash
+Created cluster link "on-prem-link" with configs:
+"bootstrap.servers"="pkc-yvw0p.eu-central-1.aws.confluent.cloud:9092"
+"connection.mode"="INBOUND"
+"link.mode"="DESTINATION"
+"local.sasl.mechanism"="PLAIN"
+"local.security.protocol"="PLAINTEXT"
+"sasl.mechanism"="PLAIN"
+"security.protocol"="SASL_SSL"
+```
+
+To confirm that the link has been created, run:
+
+```bash
+confluent kafka link list
+```
+
+You should see something like:
+
+```
+      Name     |     Source Cluster     | Destination Cluster |     Remote Cluster     | State  | Error | Error Message
+---------------+------------------------+---------------------+------------------------+--------+-------+----------------
+  on-prem-link | ZWe3nnZwTrKSM0aM2doAxQ |                     | ZWe3nnZwTrKSM0aM2doAxQ | ACTIVE |       |
+```
+
+To view the link in Confluent Cloud, you can go to <https://confluent.cloud/cluster-links> and click on `on-prem-link`, you'll see something like this:
+
+![Cluster Link](images/clusterlink.png)
+
 ## Create the Cluster Link on the Confluent Platform (aka: "on prem") side
 
 
