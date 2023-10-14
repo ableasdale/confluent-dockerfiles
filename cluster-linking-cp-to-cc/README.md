@@ -48,7 +48,9 @@ Give it a name and download the text file.
 
 ## Note for Zookeeper users
 
-The default `docker-compose.yaml` is configured for KRaft mode.  There is an alternative `docker-compose-zookeeper.yaml` provided those who wish to follow the walkthrough using a Zookeeper managed cluster instead,
+The default `docker-compose.yaml` is configured for KRaft mode.  
+
+There is an alternative `docker-compose-zookeeper.yaml` provided those who wish to follow the walkthrough using a Zookeeper managed cluster instead - in either case, we expect all steps to be the same.
 
 ## KRaft mode prerequisites
 
@@ -66,9 +68,9 @@ To create the secret for Confluent Cloud, you need to combine the key and secret
 echo -n "KEY:SECRET" | base64
 ```
 
-Paste the output from this command into `security/ccloud_creds`, replacing the placeholder line with your command output.
+Paste the output from this command into `security/ccloud_creds`, replacing the placeholder line with your command output.  Note that the file in the repository has the name `ccloud_creds_example`; the filename needs to be changed in order for the credentials to be read.
 
-In a terminal session, start up the Confluent Platform side to create your broker and zookeeper instances:
+In a terminal session, start up the Confluent Platform side to create your broker (and the zookeeper instance - if you are running the `docker-compose-zookeeper.yaml`):
 
 ```bash
 docker-compose up
