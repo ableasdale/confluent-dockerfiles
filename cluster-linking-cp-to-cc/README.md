@@ -54,7 +54,9 @@ There is an alternative `docker-compose-zookeeper.yaml` provided those who wish 
 
 ## KRaft mode prerequisites
 
-For KRaft mode to work (for the controllers and the brokers to be able to identify each other), the CLUSTER_ID is hard-coded into the `docker-compose` file.  You can use the `kafka-storage` command to generate a new UUID:
+For KRaft mode to work (for the controllers and the brokers to be able to identify each other), the `CLUSTER_ID` is hard-coded into the `docker-compose` file.  
+
+If you wish to change this, you can use the `kafka-storage` command to generate a new UUID:
 
 ```bash
 docker-compose exec broker kafka-storage random-uuid
@@ -96,7 +98,7 @@ Now we're ready to start preparing the Cluster Link.
 
 ## Create the Cluster Link on the Confluent Cloud side
 
-Open `client/ccloud-cluster-link.properties` and replace the following sections:
+Open `client/ccloud-cluster-link.properties` and replace the following **three** sections:
 
 - << dedicated instance bootstrap host >> with your **bootstrap host**.
 - << KEY >> with your API Key
@@ -105,14 +107,14 @@ Open `client/ccloud-cluster-link.properties` and replace the following sections:
 Prior to modification, the file should look like this:
 
 ```properties
+link.mode=DESTINATION
+connection.mode=INBOUND
+
 bootstrap.servers=<< dedicated instance bootstrap host >>:9092
 ssl.endpoint.identification.algorithm=https
 security.protocol=SASL_SSL
 sasl.mechanism=PLAIN
 sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="<< KEY >>" password="<< SECRET >>";
-link.mode=DESTINATION
-#link.mode=SOURCE
-connection.mode=INBOUND
 
 local.listener.name=PLAINTEXT_HOST
 local.security.protocol=PLAINTEXT
@@ -180,7 +182,7 @@ In order to complete the link and to start mirroring topics, we now need to crea
 
 ## Create the Cluster Link on the Confluent Platform (aka: "on prem") side
 
-Open `client/cp-cluster-link.properties` and replace the following sections:
+Open `client/cp-cluster-link.properties` and replace the following **three** sections:
 
 - << dedicated instance bootstrap host >> with your **bootstrap host**.
 - << KEY >> with your API Key
@@ -209,8 +211,10 @@ To set up the link from the source, let's now `ssh` to the CP instance:
 docker-compose exec broker bash
 ```
 
+As soon as you have a shell connection to the CP `broker` instance, run these commands against the broker:
+
 ```bash
-kafka-cluster-links --bootstrap-server localhost:9092 --create --link on-prem-link --config-file /tmp/client/cp-cluster-link.properties --cluster-id lkc-23pgvq --command-config /tmp/client/cp-config.properties
+kafka-cluster-links --bootstrap-server broker:9092 --create --link on-prem-link --config-file /tmp/client/cp-cluster-link.properties --cluster-id lkc-23pgvq --command-config /tmp/client/cp-config.properties
 ```
 
 You should see:
@@ -237,7 +241,7 @@ Let's run the `kafka-console-producer` and write some data to the topic:
 kafka-console-producer --bootstrap-server broker:9092 --topic cluster-link-topic
 ```
 
-Now let's mirror the topic over the Cluster Link **note**: this mirror is created on your dedicated cluster in Confluent Cloud (don't try running this on the CP cluster):
+Now let's mirror that topic over the Cluster Link **note**: this mirror is created on your dedicated cluster in Confluent Cloud (don't try running this on the shell session on the CP cluster):
 
 ```bash
 confluent kafka mirror create cluster-link-topic --link on-prem-link
@@ -253,6 +257,8 @@ You'll see evidence that the messages are now being mirrored if you view the Clu
 
 ![Cluster Link](images/mirroring.png)
 
+## Reading messages from the Mirror Topic
+
 Let's try to consume our messages from the mirror topic.  First we need to create an API Key (on the dedicated instance) to allow us to read from the topic:
 
 ```bash
@@ -261,7 +267,7 @@ confluent api-key create --resource <cluster-id>
 
 Where `<cluster-id>` is the ID for your dedicated cluster.
 
-Note that this will output a Key and Secret to stdout - store it for use later.
+Note that this will output a Key and Secret to `stdout` - store it for use later.
 
 Using the API Key, we now need to associate it with our cluster:
 
@@ -269,7 +275,7 @@ Using the API Key, we now need to associate it with our cluster:
 confluent api-key use <API Key> --resource <cluster-id>
 ```
 
-You should now be able to read the mirror topic by running:
+You should now be able to read from the mirror topic by running:
 
 ```bash
 confluent kafka topic consume -b cluster-link-topic
