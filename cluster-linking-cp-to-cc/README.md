@@ -205,7 +205,9 @@ local.security.protocol=PLAINTEXT
 local.sasl.mechanism=PLAIN
 ```
 
-To set up the link from the source, let's now `ssh` to the CP instance:
+### Note: the next few steps are all performed from the "on-prem" broker instance
+
+To set up the link from the source, let's now `ssh` to our CP instance:
 
 ```bash
 docker-compose exec broker bash
@@ -240,6 +242,8 @@ Let's run the `kafka-console-producer` and write some data to the topic:
 ```bash
 kafka-console-producer --bootstrap-server broker:9092 --topic cluster-link-topic
 ```
+
+### Note that the next few steps are all performed on the Confluent Cloud dedicated cluster
 
 Now let's mirror that topic over the Cluster Link **note**: this mirror is created on your dedicated cluster in Confluent Cloud (don't try running this on the shell session on the CP cluster):
 
