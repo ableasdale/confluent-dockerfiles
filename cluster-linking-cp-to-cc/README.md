@@ -2,7 +2,7 @@
 
 We're going to create a Source Initiated Cluster Link from an on-prem Confluent Platform Cluster to a Dedicated Cluster in Confluent Cloud.
 
-## Prerequisites
+## Prerequisites
 
 Create a **Dedicated** cluster in Confluent Cloud to test this:
 
@@ -46,6 +46,18 @@ For scope, give the key Global Access:
 
 Give it a name and download the text file.
 
+## Note for Zookeeper users
+
+The default `docker-compose.yaml` is configured for KRaft mode.  There is an alternative `docker-compose-zookeeper.yaml` provided those who wish to follow the walkthrough using a Zookeeper managed cluster instead,
+
+## KRaft mode prerequisites
+
+For KRaft mode to work (for the controllers and the brokers to be able to identify each other), the CLUSTER_ID is hard-coded into the `docker-compose` file.  You can use the `kafka-storage` command to generate a new UUID:
+
+```bash
+docker-compose exec broker kafka-storage random-uuid
+```
+
 ## Create the configuration and the Secret
 
 To create the secret for Confluent Cloud, you need to combine the key and secret from the text file that you have just downloaded to create a base64-encoded string:
@@ -65,7 +77,7 @@ docker-compose up
 As soon as this is done, we will need to get the Cluster ID - to do this, we can run the `kafka-cluster` command on the container:
 
 ```bash
-docker-compose exec broker1 kafka-cluster cluster-id --bootstrap-server broker1:9091
+docker-compose exec broker kafka-cluster cluster-id --bootstrap-server broker:9092
 ```
 
 You should see something like:
@@ -192,11 +204,11 @@ local.sasl.mechanism=PLAIN
 To set up the link from the source, let's now `ssh` to the CP instance:
 
 ```bash
-docker-compose exec broker1 bash
+docker-compose exec broker bash
 ```
 
 ```bash
-kafka-cluster-links --bootstrap-server localhost:9091 --create --link on-prem-link --config-file /tmp/client/cp-cluster-link.properties --cluster-id lkc-23pgvq --command-config /tmp/client/cp-config.properties
+kafka-cluster-links --bootstrap-server localhost:9092 --create --link on-prem-link --config-file /tmp/client/cp-cluster-link.properties --cluster-id lkc-23pgvq --command-config /tmp/client/cp-config.properties
 ```
 
 You should see:
@@ -208,7 +220,7 @@ Cluster link 'on-prem-link' creation successfully completed.
 Create a topic, produce to it and mirror it
 
 ```bash
-kafka-topics --bootstrap-server broker1:9091 --topic cluster-link-topic --replication-factor 1 --partitions 1 --create --config min.insync.replicas=1'
+kafka-topics --bootstrap-server broker:9092 --topic cluster-link-topic --replication-factor 1 --partitions 1 --create --config min.insync.replicas=1'
 ```
 
 You should see:
@@ -220,13 +232,13 @@ Created topic cluster-link-topic.
 Let's run the `kafka-console-producer` and write some data to the topic:
 
 ```bash
-kafka-console-producer --bootstrap-server broker1:9091 --topic cluster-link-topic
+kafka-console-producer --bootstrap-server broker:9092 --topic cluster-link-topic
 ```
 
 Now let's mirror the topic over the Cluster Link (note - maybe this needs to be done on the other side?):
 
 ```bash
-kafka-mirrors --create --mirror-topic cluster-link-topic --link on-prem-link --bootstrap-server broker1:9091
+kafka-mirrors --create --mirror-topic cluster-link-topic --link on-prem-link --bootstrap-server broker:9092
 ```
 
 It does - this mirror is created in CCloud (not in the container shell!):
