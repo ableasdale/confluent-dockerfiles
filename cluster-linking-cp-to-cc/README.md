@@ -235,35 +235,29 @@ Let's run the `kafka-console-producer` and write some data to the topic:
 kafka-console-producer --bootstrap-server broker:9092 --topic cluster-link-topic
 ```
 
-Now let's mirror the topic over the Cluster Link (note - maybe this needs to be done on the other side?):
-
-```bash
-kafka-mirrors --create --mirror-topic cluster-link-topic --link on-prem-link --bootstrap-server broker:9092
-```
-
-It does - this mirror is created in CCloud (not in the container shell!):
+Now let's mirror the topic over the Cluster Link **note**: this mirror is created on your dedicated cluster in Confluent Cloud (don't try running this on the CP cluster):
 
 ```bash
 confluent kafka mirror create cluster-link-topic --link on-prem-link
 ```
 
-You should see:
+You should see the following output:
 
 ```
 Created mirror topic "cluster-link-topic".
 ```
 
-You'll see evidence that the messages are now being mirrored back in the Confluent Cloud UI:
+You'll see evidence that the messages are now being mirrored if you view the Cluster Link in the Confluent Cloud UI:
 
 ![Cluster Link](images/mirroring.png)
 
-Let's consume from the mirror topic.  First we need to create an API Key to allow us to read from the topic:
+Let's try to consume our messages from the mirror topic.  First we need to create an API Key (on the dedicated instance) to allow us to read from the topic:
 
 ```bash
 confluent api-key create --resource <cluster-id>
 ```
 
-Where <cluster-id> is the ID for your dedicated cluster.
+Where `<cluster-id>` is the ID for your dedicated cluster.
 
 Note that this will output a Key and Secret to stdout - store it for use later.
 
@@ -277,4 +271,12 @@ You should now be able to read the mirror topic by running:
 
 ```bash
 confluent kafka topic consume -b cluster-link-topic
+```
+
+### Notes below
+
+When creating a Mirror if the **destination** is a CP Cluster, you'd use the following syntax (for example):
+
+```bash
+kafka-mirrors --create --mirror-topic cluster-link-topic --link on-prem-link --bootstrap-server broker:9092
 ```
