@@ -36,6 +36,53 @@ docker-compose exec broker2 kafka-producer-perf-test --throughput -1 --num-recor
 docker-compose exec broker2 kafka-consumer-perf-test --broker-list broker2:9092 --topic product --messages 10000000 --print-metrics
 ```
 
+## Create some pageviews with the `datagen` Connector:
+
+```bash
+curl -i -X PUT http://localhost:8083/connectors/datagen_local_01/config \
+     -H "Content-Type: application/json" \
+     -d '{
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "kafka.topic": "pageviews",
+            "quickstart": "pageviews",
+            "max.interval": 1000,
+            "iterations": 10000000,
+            "tasks.max": "1"
+        }'
+```
+
+Confirm that the connector is running:
+
+```bash
+curl -s http://localhost:8083/connectors/datagen_local_01/status | jq
+```
+
+Check our 
+
+```bash
+docker-compose exec connect kafka-avro-console-consumer \
+ --bootstrap-server broker:29091 \
+ --property schema.registry.url=http://schemaregistry:8081 \
+ --topic pageviews \
+ --property print.key=true \
+ --property key.deserializer=org.apache.kafka.common.serialization.StringDeserializer \
+ --property key.separator=" : " \
+ --max-messages 10
+```
+
+
+curl -u  http://connect:8083/v1/metadata/id
+curl -XGET  http://localhost:8083/connectors
+curl -XGET  http://localhost:8083
+curl -XGET  http://localhost:8083/connector-plugins/ | jq
+
+Standard producer:
+
+```bash
+docker-compose exec broker kafka-console-producer --bootstrap-server broker:29091 --topic cluster-link-topic
+```
+
 ## `ssh` into the instamce
 
 ```bash
