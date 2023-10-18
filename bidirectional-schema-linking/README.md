@@ -24,8 +24,21 @@ docker-compose exec broker2 kafka-topics --bootstrap-server broker2:9092 --topic
 docker-compose exec broker2 kafka-topics --bootstrap-server broker2:9092 --topic product --create --partitions 1 --replication-factor 1
 ```
 
+## Create some load with the `kafka-producer-perf-test`
 
+```bash
+docker-compose exec broker2 kafka-producer-perf-test --throughput -1 --num-records 1000000 --topic product --record-size 1000 --producer-props bootstrap.servers=broker2:29092 acks=all
 ```
+
+## Create some consumer load with `kafka-consumer-perf-test`
+
+```bash
+docker-compose exec broker2 kafka-consumer-perf-test --broker-list broker2:9092 --topic product --messages 10000000 --print-metrics
+```
+
+## `ssh` into the instamce
+
+```bash
 docker-compose exec broker bash
 ```
 
@@ -49,7 +62,7 @@ curl -XGET localhost:8091/v1/metadata/id
 
 ## Notes below
 
-Note that MetricsReporter (or more accurately, C3) requires that a single 
+Note that MetricsReporter (or more accurately, C3) requires that a single topic is used by the Metrics reporter (for the `_confluent-metrics` topic).  If you set each cluster up with a separate MetricsReporter (each writing to a separate `_confluent-metrics` topic), C3 will only report (or show) metrics for one of the two clusters.
 
 For the second broker (`tgt`):
 
