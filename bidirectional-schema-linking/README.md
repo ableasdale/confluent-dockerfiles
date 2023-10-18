@@ -36,7 +36,7 @@ docker-compose exec broker2 kafka-producer-perf-test --throughput -1 --num-recor
 docker-compose exec broker2 kafka-consumer-perf-test --broker-list broker2:9092 --topic product --messages 10000000 --print-metrics
 ```
 
-## Create some pageviews with the `datagen` Connector:
+## Create some pageviews with the `pageviews` quickstart using the `datagen` Connector
 
 ```bash
 curl -i -X PUT http://localhost:8083/connectors/datagen_local_01/config \
@@ -58,7 +58,7 @@ Confirm that the connector is running:
 curl -s http://localhost:8083/connectors/datagen_local_01/status | jq
 ```
 
-Check our 
+Check the `pageviews` topic using the `kafka-avro-console-consumer`:
 
 ```bash
 docker-compose exec connect kafka-avro-console-consumer \
@@ -71,6 +71,80 @@ docker-compose exec connect kafka-avro-console-consumer \
  --max-messages 10
 ```
 
+You should see lots of messages like this:
+
+```json
+321 : {"viewtime":321,"userid":"User_5","pageid":"Page_61"}
+```
+
+## Create more data
+
+Let's create some Pizza orders using the `pizza_orders` quickstart:
+
+```bash
+curl -i -X PUT http://localhost:8083/connectors/datagen_local_02/config \
+     -H "Content-Type: application/json" \
+     -d '{
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "kafka.topic": "pizza_orders",
+            "quickstart": "pizza_orders",
+            "max.interval": 1000,
+            "iterations": 10000000,
+            "tasks.max": "1"
+        }'
+```
+
+To check the structure of the data:
+
+```bash
+docker-compose exec connect kafka-avro-console-consumer \
+ --bootstrap-server broker:29091 \
+ --property schema.registry.url=http://schemaregistry:8081 \
+ --topic pizza_orders \
+ --property print.key=true \
+ --property key.deserializer=org.apache.kafka.common.serialization.StringDeserializer \
+ --property key.separator=" : " \
+ --max-messages 10
+```
+
+And here's an example:
+
+```json
+2 : {"store_id":2,"store_order_id":1137,"coupon_code":1924,"date":18314,"status":"accepted","order_lines":[{"product_id":69,"category":"salad","quantity":3,"unit_price":17.07,"net_price":51.21},{"product_id":4,"category":"wings","quantity":4,"unit_price":3.52,"net_price":14.08}]}
+```
+
+A list of quickstarts can be found here:
+
+<https://github.com/confluentinc/kafka-connect-datagen/tree/master/src/main/resources>
+
+
+```bash
+curl -i -X PUT http://localhost:8083/connectors/datagen_local_02/config \
+     -H "Content-Type: application/json" \
+     -d '{
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "kafka.topic": "device_information",
+            "quickstart": "device_information",
+            "max.interval": 1000,
+            "iterations": 10000000,
+            "tasks.max": "1"
+        }'
+```
+
+docker-compose exec connect kafka-avro-console-consumer \
+ --bootstrap-server broker:29091 \
+ --property schema.registry.url=http://schemaregistry:8081 \
+ --topic device_information \
+ --property print.key=true \
+ --property key.deserializer=org.apache.kafka.common.serialization.StringDeserializer \
+ --property key.separator=" : " \
+ --max-messages 10
+
+```
+157.200.87.61 : {"device_ip":"157.200.87.61","mac_address":"F8-E2-9D-20-DA-2B","owner":"Cyril Yellowlea"}
+```
 
 curl -u  http://connect:8083/v1/metadata/id
 curl -XGET  http://localhost:8083/connectors
