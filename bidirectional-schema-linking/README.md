@@ -6,7 +6,7 @@ In this example, Confluent Control Center (C3) has been configured to monitor bo
 
 ## Troubleshooting: testing the Metrics output
 
-This may be out of date now as all the metrics are being configured on the first broker (source)
+Note that for C3 to work, all the metrics are being collected on the first broker (in the `source` cluster).
 
 For the first broker (`src`):
 
@@ -74,7 +74,7 @@ docker-compose exec connect kafka-avro-console-consumer \
 You should see lots of messages like this:
 
 ```json
-321 : {"viewtime":321,"userid":"User_5","pageid":"Page_61"}
+{"viewtime":321,"userid":"User_5","pageid":"Page_61"}
 ```
 
 ## Create more data
@@ -111,16 +111,15 @@ docker-compose exec connect kafka-avro-console-consumer \
 And here's an example:
 
 ```json
-2 : {"store_id":2,"store_order_id":1137,"coupon_code":1924,"date":18314,"status":"accepted","order_lines":[{"product_id":69,"category":"salad","quantity":3,"unit_price":17.07,"net_price":51.21},{"product_id":4,"category":"wings","quantity":4,"unit_price":3.52,"net_price":14.08}]}
+{"store_id":2,"store_order_id":1137,"coupon_code":1924,"date":18314,"status":"accepted","order_lines":[{"product_id":69,"category":"salad","quantity":3,"unit_price":17.07,"net_price":51.21},{"product_id":4,"category":"wings","quantity":4,"unit_price":3.52,"net_price":14.08}]}
 ```
 
 A list of quickstarts can be found here:
 
 <https://github.com/confluentinc/kafka-connect-datagen/tree/master/src/main/resources>
 
-
 ```bash
-curl -i -X PUT http://localhost:8083/connectors/datagen_local_02/config \
+curl -i -X PUT http://localhost:8083/connectors/datagen_local_03/config \
      -H "Content-Type: application/json" \
      -d '{
             "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
@@ -133,6 +132,9 @@ curl -i -X PUT http://localhost:8083/connectors/datagen_local_02/config \
         }'
 ```
 
+To read some of the data from the `device_information` topic:
+
+```bash
 docker-compose exec connect kafka-avro-console-consumer \
  --bootstrap-server broker:29091 \
  --property schema.registry.url=http://schemaregistry:8081 \
@@ -141,15 +143,50 @@ docker-compose exec connect kafka-avro-console-consumer \
  --property key.deserializer=org.apache.kafka.common.serialization.StringDeserializer \
  --property key.separator=" : " \
  --max-messages 10
-
-```
-157.200.87.61 : {"device_ip":"157.200.87.61","mac_address":"F8-E2-9D-20-DA-2B","owner":"Cyril Yellowlea"}
 ```
 
-curl -u  http://connect:8083/v1/metadata/id
-curl -XGET  http://localhost:8083/connectors
+Example data includes:
+
+```json
+{"device_ip":"157.200.87.61","mac_address":"F8-E2-9D-20-DA-2B","owner":"Cyril Yellowlea"}
+```
+
+Let's create some stock trade data:
+
+```bash
+curl -i -X PUT http://localhost:8083/connectors/datagen_local_04/config \
+     -H "Content-Type: application/json" \
+     -d '{
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "kafka.topic": "stock_trades",
+            "quickstart": "stock_trades",
+            "max.interval": 1000,
+            "iterations": 10000000,
+            "tasks.max": "1"
+        }'
+```
+
+## Working with the Connect Worker
+
+To get overall information about the Worker:
+
+```bash
 curl -XGET  http://localhost:8083
+```
+
+To view all available connector plugins:
+
+```bash
 curl -XGET  http://localhost:8083/connector-plugins/ | jq
+```
+
+To view all available connectors:
+
+```bash
+curl -XGET  http://localhost:8083/connectors
+```
+
 
 Standard producer:
 
