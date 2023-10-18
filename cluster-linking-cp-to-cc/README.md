@@ -228,7 +228,7 @@ Cluster link 'on-prem-link' creation successfully completed.
 Create a topic, produce to it and mirror it
 
 ```bash
-kafka-topics --bootstrap-server broker:9092 --topic cluster-link-topic --replication-factor 1 --partitions 1 --create --config min.insync.replicas=1'
+kafka-topics --bootstrap-server broker:9092 --topic cluster-link-topic --replication-factor 1 --partitions 1 --create --config min.insync.replicas=1
 ```
 
 You should see:
