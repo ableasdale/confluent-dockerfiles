@@ -83,7 +83,6 @@ services:
       CONTROL_CENTER_REPLICATION_FACTOR: 1
       CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
-      #CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       CONTROL_CENTER_UI_AUTOUPDATE_ENABLE: "true"
       CONTROL_CENTER_COMMAND_TOPIC_REPLICATION: 1
       CONTROL_CENTER_METRICS_TOPIC_REPLICATION: 1
@@ -92,9 +91,7 @@ services:
       CONTROL_CENTER_KAFKA_SOURCE_CPREST_URL: http://broker:8090
       CONTROL_CENTER_SCHEMA_REGISTRY_SOURCE_URL: "http://schemaregistry:8081"
       CONTROL_CENTER_CONNECT_SOURCE_CLUSTER: http://connect:8083
-      #CONTROL_CENTER_CONNECT_CLUSTER: connect:8083
-      CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: "connect:8083"
-      #CONTROL_CENTER_CONNECT_CONNECT-CLUSTER_CLUSTER: connect:8083
+
 
       CONTROL_CENTER_KAFKA_TARGET_BOOTSTRAP_SERVERS: "broker2:29092"
       CONTROL_CENTER_SCHEMA_REGISTRY_TARGET_URL: "http://schemaregistry2:8082"
@@ -114,11 +111,10 @@ services:
       - $PWD/data:/data
     environment:
       #CLASSPATH: /usr/share/java/kafka-connect-replicator/replicator-rest-extension-${CP_TAG}.jar:/usr/share/java/monitoring-interceptors/*
-      # CONNECT_CLUSTER_NAME: source
       CONNECT_BOOTSTRAP_SERVERS: broker:29091
-      CONNECT_LISTENERS: http://connect:8083  # http://0.0.0.0:8083
+      CONNECT_LISTENERS: http://connect:8083
       CONNECT_REST_PORT: 8083
-      CONNECT_GROUP_ID: "source" #"connect-cluster"
+      CONNECT_GROUP_ID: "source"
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_PRODUCER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: broker:29091
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
@@ -135,7 +131,7 @@ services:
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schemaregistry:8081
       CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components,/data/connect-jars
-      CONNECT_REST_ADVERTISED_HOST_NAME: connect #"localhost"
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect
     command:
       - bash
       - -c
@@ -149,9 +145,6 @@ services:
         sleep infinity
 
       #CONNECT_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY: All
-      #CONNECT_CONSUMER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: kafka:29092
-      #CONNECT_CONSUMER_INTERCEPTOR_CLASSES: io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor
-      
       
       #CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       # CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: '[%d] %p %X{connector.context}%m (%c:%L)%n'
@@ -160,15 +153,9 @@ services:
       #CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
       #CONNECT_PLUGIN_PATH: /usr/share/java
       #CONNECT_PRODUCER_CLIENT_ID: connect-worker-producer
-      #CONNECT_PRODUCER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: kafka:29092
-      #CONNECT_PRODUCER_INTERCEPTOR_CLASSES: io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor
       #CONNECT_REST_ADVERTISED_HOST_NAME: connect
       #CONNECT_REST_EXTENSION_CLASSES: io.confluent.connect.replicator.monitoring.ReplicatorMonitoringExtension
       
-      
-
-
-
   # TARGET CLUSTER
 
   broker2:
