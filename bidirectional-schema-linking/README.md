@@ -167,6 +167,23 @@ curl -i -X PUT http://localhost:8083/connectors/datagen_local_04/config \
         }'
 ```
 
+```bash
+docker-compose exec connect kafka-avro-console-consumer \
+ --bootstrap-server broker:29091 \
+ --property schema.registry.url=http://schemaregistry:8081 \
+ --topic stock_trades \
+ --property print.key=true \
+ --property key.deserializer=org.apache.kafka.common.serialization.StringDeserializer \
+ --property key.separator=" : " \
+ --max-messages 10
+```
+
+Example output:
+
+```json
+{"side":"SELL","quantity":1004,"symbol":"ZTEST","price":506,"account":"LMN456","userid":"User_1"}
+```
+
 ## Working with the Connect Worker
 
 To get overall information about the Worker:
@@ -187,6 +204,70 @@ To view all available connectors:
 curl -XGET  http://localhost:8083/connectors
 ```
 
+```bash
+curl -XGET  http://localhost:8083/connectors/datagen_local_01 | jq
+```
+
+```bash
+curl -XGET  http://localhost:8083/connectors/datagen_local_01/tasks/0/status | jq
+```
+
+## Configure Schema Linking from the `source` to the `target` Schema Registry
+
+```bash
+docker-compose exec schemaregistry schema-exporter --create --name src-to-tgt-link --subjects "pageviews-value" \
+    --config-file /tmp/config/schemalink-src.cfg \
+    --schema.registry.url http://schemaregistry:8081 \
+    --subject-format "source.pageviews-value" \
+    --context-type NONE
+```
+
+You will see something like this:
+
+```
+Successfully created exporter src-to-tgt-link
+```
+
+Confirm that the link works and is available:
+
+```bash
+docker-compose exec schemaregistry schema-exporter --list --schema.registry.url http://schemaregistry:8081
+```
+
+You should see:
+
+```
+[src-to-tgt-link]
+```
+
+```bash
+docker-compose exec schemaregistry schema-exporter --get-status --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081 | jq
+```
+
+You will see something like:
+
+```json
+{
+  "name": "src-to-tgt-link",
+  "state": "RUNNING",
+  "offset": 2,
+  "ts": 1697640995555
+}
+```
+
+### Retrieve the Schema on both sides
+
+Let's retrieve the schema from the `source` cluster:
+
+```bash
+curl http://localhost:8081/subjects/pageviews-value/versions/1 | jq
+```
+
+And now, let's retrieve the schema from the `target` cluster:
+
+```bash
+curl http://localhost:8082/subjects/source.pageviews-value/versions/1 | jq
+```
 
 Standard producer:
 
@@ -194,7 +275,7 @@ Standard producer:
 docker-compose exec broker kafka-console-producer --bootstrap-server broker:29091 --topic cluster-link-topic
 ```
 
-## `ssh` into the instamce
+## `ssh` into the instance
 
 ```bash
 docker-compose exec broker bash
