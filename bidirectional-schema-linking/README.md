@@ -55,7 +55,7 @@ Created topic replicate-me.
 Let's issue the first JSON payload to instantiate replicator from the `source` to the `target` cluster:
 
 ```bash
-curl -i -X POST http://localhost:8083/connectors \
+curl -i -X POST http://localhost:8085/connectors \
      -H "Content-Type: application/json" \
      -d @./config/src-to-tgt-replicator.json
 ```
@@ -91,7 +91,13 @@ Running the following will allow you to start again from scratch:
 
 ```bash
 docker-compose down
-docker container prune
+docker container prune -f
+```
+
+Alternatively, you can destroy all, clean-up and restart by running:
+
+```bash
+docker-compose down && docker container prune -f && docker-compose up -d
 ```
 
 ## Troubleshooting: testing the Metrics output
