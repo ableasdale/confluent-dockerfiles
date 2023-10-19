@@ -116,7 +116,8 @@ services:
     volumes:
       - $PWD/data:/data
     environment:
-      #CLASSPATH: /usr/share/java/kafka-connect-replicator/replicator-rest-extension-${CP_TAG}.jar:/usr/share/java/monitoring-interceptors/*
+      CLASSPATH: /usr/share/java/kafka-connect-replicator/replicator-rest-extension-${CP_TAG}.jar:/usr/share/java/monitoring-interceptors/*
+      CONNECT_REST_EXTENSION_CLASSES: io.confluent.connect.replicator.monitoring.ReplicatorMonitoringExtension
       CONNECT_BOOTSTRAP_SERVERS: broker:29091
       CONNECT_LISTENERS: http://connect:8083
       CONNECT_REST_PORT: 8083
@@ -126,6 +127,7 @@ services:
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       CONNECT_CONSUMER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: broker:29091
       CONNECT_CONFLUENT_METADATA_BOOTSTRAP_SERVER_URLS: http://broker:8090
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
       # Connect Custom Topics
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
       CONNECT_STATUS_STORAGE_TOPIC: connect-status
@@ -158,7 +160,9 @@ services:
       #CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
       #CONNECT_PRODUCER_CLIENT_ID: connect-worker-producer
       #CONNECT_REST_EXTENSION_CLASSES: io.confluent.connect.replicator.monitoring.ReplicatorMonitoringExtension
-      
+
+
+
   # TARGET CLUSTER
 
   broker2:

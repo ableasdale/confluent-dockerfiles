@@ -1,8 +1,98 @@
-# Schema Linking - Bidirectional
+# Bidirectional Replicator, Cluster Linking and Schema Linking
 
 In this example, Confluent Control Center (C3) has been configured to monitor both clusters:
 
-![Dedicated Cluster](img/c3-2clusters.png)
+![C3 Monitoring Multiple Clusters](img/c3-2clusters.png)
+
+## Getting Started
+
+Start up both clusters and all components by running:
+
+```bash
+docker-compose up -d
+```
+
+From here, you can visit C3 and view both clusters (`source` and `target`) at <http://localhost:9021>
+
+## Bidirectional Replicator
+
+We're going to start with a simple **Active/Active** replicator configuration.  Both clusters have been configured to auto-create topics, so it's sufficient to just create the topic on the `source` cluster; the topic will be created on the `target` when you create the Replicator instance.
+
+### Connect ReST API availability check
+
+First, let's ensure that both Connect clusters are available - for the `source` cluster:
+
+```bash
+curl -XGET  http://localhost:8083
+```
+
+And for the `target` cluster:
+
+```bash
+curl -XGET  http://localhost:8084
+```
+
+In both cases, you should see a JSON response that looks like this:
+
+```json
+{"version":"7.5.1-ce","commit":"168cf155f4196010","kafka_cluster_id":"AQe4zqZuTiKSM1aM4doBxQ"}
+```
+
+### Create a `Replicator` instance from the `source` cluster to the `target` cluster
+
+First we need to create our topic (we're calling it `replicate-me` for the sake of this walkthrough):
+
+```bash
+docker-compose exec broker kafka-topics --bootstrap-server broker:29091 --topic replicate-me --replication-factor 1 --partitions 1 --create
+```
+
+If this was successful, you should now see the message:
+
+```
+Created topic replicate-me.
+```
+
+Let's issue the first JSON payload to instantiate replicator from the `source` to the `target` cluster:
+
+```bash
+curl -i -X POST http://localhost:8083/connectors \
+     -H "Content-Type: application/json" \
+     -d @./config/src-to-tgt-replicator.json
+```
+
+TODO: you should see JSON output...
+
+```
+// "topic.rename.format": "${topic}.replica",
+```
+
+Note that the configuration for this Replicator instance can be found in `config/src-to-target-replicator.json`.
+
+### Produce some messages to the source topic
+
+We want to ensure that data is being replicated and we want to ensure our Replicator is configured with decent throughput, so we're going to use the `kafka-producer-perf-test` tool for that:
+
+```bash
+docker-compose exec broker kafka-producer-perf-test --throughput -1 --num-records 1000000 --topic replicate-me --record-size 1000 --producer-props bootstrap.servers=broker:29091 acks=all
+```
+
+
+### Troubleshooting Replicator creation
+
+If this fails, you can review the Connect logs to troubleshoot by running:
+
+```bash
+docker logs connect | less
+```
+
+#### Teardown and cleanup
+
+Running the following will allow you to start again from scratch:
+
+```bash
+docker-compose down
+docker container prune
+```
 
 ## Troubleshooting: testing the Metrics output
 
