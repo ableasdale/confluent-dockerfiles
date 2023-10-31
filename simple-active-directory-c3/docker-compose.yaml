@@ -2,95 +2,81 @@
 version: '3.5'
 services:
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:${CP_TAG}
-    hostname: zookeeper
-    container_name: zookeeper
+  broker:
+    container_name: broker
+    hostname: broker
+    image: confluentinc/cp-server:${CP_TAG}
+    ports:
+      - "8090:8090"
+      - "9092:9092"
+      - "9101:9101"
     restart: always
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
-  kafka0:
-    image: confluentinc/cp-server:${CP_TAG}
-    hostname: kafka0
-    container_name: kafka0
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
-      - "8090:8090"
-    environment:
-      KAFKA_BROKER_ID: 0
-      # Rack Awareness
-      # KAFKA_BROKER_RACK: rack-a
-
-      # Zookeeper
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-
-      # Mappings / Listeners
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka0:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_DEFAULT_MIN_ISR: 1
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_CLUSTER_LINK_METADATA_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_REPORTERS_TELEMETRY_AUTO_ENABLE: 'false'
+      KAFKA_CONFLUENT_BALANCER_ENABLE: 'false'
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_CONFLUENT_HTTP_SERVER_LISTENERS: "http://0.0.0.0:8090"
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://broker:29092,CONTROLLER://broker:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      CLUSTER_ID: 'ZWe3nnZwTrKSM0aM2doAxQ'
 
       # Metrics Reporting
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka0:29092
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:29092
+
+      # Override Replication Factors for internal topics
       KAFKA_CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
       KAFKA_CONFLUENT_METRICS_REPORTER_TOPIC_REPLICATION_FACTOR: 1
-      # for 5.4.x:
-      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
-      # for 6.0.0
-      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      
-      KAFKA_CONFLUENT_METADATA_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_CONFLUENT_METRICS_ENABLE: 'true'
-      KAFKA_CONFLUENT_SECURITY_EVENT_LOGGER_EXPORTER_KAFKA_TOPIC_REPLICAS: 1
-      #KAFKA_LOG4J_LOGGERS: 'log4j.rootLogger=TRACE,kafka.authorizer.logger=DEBUG,io.confluent.security.auth.provider.ldap.LdapGroupManager=TRACE'
-      #KAFKA_OPTS: -Dsun.security.krb5.debug=true
-
-  control-center:
-    image: confluentinc/cp-enterprise-control-center:${CP_TAG}
-    hostname: control-center
-    container_name: control-center
-    depends_on:
-      - zookeeper
-      - kafka0
-    ports:
-      - "9021:9021"
-    volumes:
-      - ./control-center-jaas.conf:/tmp/control-center-jaas.conf
-      - ./log4jnew.conf:/tmp/log4j.conf
-    environment:
-      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka0:29092'
-      CONTROL_CENTER_REPLICATION_FACTOR: 1
-      # For LDAP
-      CONTROL_CENTER_REST_AUTHENTICATION_REALM: c3
-      CONTROL_CENTER_REST_AUTHENTICATION_METHOD: BASIC
-      # CONTROL_CENTER_AUTH_RESTRICTED_ROLES: Guests
-      CONTROL_CENTER_OPTS: "-Djava.security.auth.login.config=/tmp/control-center-jaas.conf"
-      CONTROL_CENTER_REST_AUTHENTICATION_ROLES: Administrators
-      #CONTROL_CENTER_LOG4J_LOGGERS: 'log4j.logger.org.eclipse.jetty=DEBUG'
-      CONTROL_CENTER_LOG4J_LOGGERS: 'log4j.rootLogger=TRACE,kafka.authorizer.logger=DEBUG,io.confluent.security.auth.provider.ldap.LdapGroupManager=TRACE'
-      # -Dlog4j.configuration=file:/tmp/log4j.conf
-      # CONTROL_CENTER_O
-      # Performance tuning
-      # CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: "4000000000"
-      # CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: "5"
 
   schema-registry:
     image: confluentinc/cp-schema-registry:${CP_TAG}
     container_name: schema-registry
     hostname: schema-registry
     depends_on:
-      - zookeeper
-      - kafka0
+      - broker
     ports:
       - '8081:8081'
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka0:29092
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker:29092
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:${CP_TAG}
+    hostname: control-center
+    container_name: control-center
+    restart: always
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - "9021:9021"
+    volumes:
+       - ./control-center-jaas.conf:/tmp/control-center-jaas.conf
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker:29092'
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+
+      # For LDAP
+      CONTROL_CENTER_REST_AUTHENTICATION_ROLES: Administrators,Guests
+      CONTROL_CENTER_AUTH_RESTRICTED_ROLES: Guests
+      CONTROL_CENTER_REST_AUTHENTICATION_METHOD: BASIC
+      CONTROL_CENTER_REST_AUTHENTICATION_REALM: c3
+      CONTROL_CENTER_OPTS: "-Djava.security.auth.login.config=/tmp/control-center-jaas.conf -Djava.security.debug=all -Djava.security.auth.debug=all -Dorg.eclipse.jetty.util.log.IGNORED=true"

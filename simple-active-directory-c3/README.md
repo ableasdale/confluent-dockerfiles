@@ -177,3 +177,6 @@ In order to confirm the values for the `-b` and `-D` switches in the above examp
 From there, select the `Administrator` user and look at the `distinguishedName` field under the `Attribute Editor`:
 
 ![Active Directory: Administrator distinguishedName](img/distinguished-name.png)
+
+### Testing Confluent Platform and C3
+
