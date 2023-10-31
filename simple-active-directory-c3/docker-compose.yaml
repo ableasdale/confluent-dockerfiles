@@ -3,7 +3,7 @@ version: '3.5'
 services:
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.2.1
+    image: confluentinc/cp-zookeeper:${CP_TAG}
     hostname: zookeeper
     container_name: zookeeper
     restart: always
@@ -12,7 +12,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka0:
-    image: confluentinc/cp-server:7.2.1
+    image: confluentinc/cp-server:${CP_TAG}
     hostname: kafka0
     container_name: kafka0
     depends_on:
@@ -53,7 +53,7 @@ services:
       #KAFKA_OPTS: -Dsun.security.krb5.debug=true
 
   control-center:
-    image: confluentinc/cp-enterprise-control-center:7.2.2
+    image: confluentinc/cp-enterprise-control-center:${CP_TAG}
     hostname: control-center
     container_name: control-center
     depends_on:
@@ -70,12 +70,27 @@ services:
       # For LDAP
       CONTROL_CENTER_REST_AUTHENTICATION_REALM: c3
       CONTROL_CENTER_REST_AUTHENTICATION_METHOD: BASIC
-      CONTROL_CENTER_AUTH_RESTRICTED_ROLES: Guests
-      CONTROL_CENTER_REST_AUTHENTICATION_ROLES: Administrators,Guests
+      # CONTROL_CENTER_AUTH_RESTRICTED_ROLES: Guests
       CONTROL_CENTER_OPTS: "-Djava.security.auth.login.config=/tmp/control-center-jaas.conf"
-      CONTROL_CENTER_LOG4J_LOGGERS: 'log4j.logger.org.eclipse.jetty=DEBUG'
+      CONTROL_CENTER_REST_AUTHENTICATION_ROLES: Administrators
+      #CONTROL_CENTER_LOG4J_LOGGERS: 'log4j.logger.org.eclipse.jetty=DEBUG'
+      CONTROL_CENTER_LOG4J_LOGGERS: 'log4j.rootLogger=TRACE,kafka.authorizer.logger=DEBUG,io.confluent.security.auth.provider.ldap.LdapGroupManager=TRACE'
       # -Dlog4j.configuration=file:/tmp/log4j.conf
       # CONTROL_CENTER_O
       # Performance tuning
-      CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: "4000000000"
-      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: "5"
+      # CONTROL_CENTER_STREAMS_CACHE_MAX_BYTES_BUFFERING: "4000000000"
+      # CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: "5"
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:${CP_TAG}
+    container_name: schema-registry
+    hostname: schema-registry
+    depends_on:
+      - zookeeper
+      - kafka0
+    ports:
+      - '8081:8081'
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka0:29092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
