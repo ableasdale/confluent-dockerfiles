@@ -59,3 +59,13 @@ In order to log in, you need to issue the `Ctrl+Alt+Delete` key combination; in 
 As soon as you do this, you'll be able to enter the Administrator password to log in:
 
 ![Starting Windows: Login As Administrator](img/adm-password.png)
+
+### Install VirtualBox Guest Additions
+
+In order to install the Guest Additions in Windows, you can navigate to the **Devices** menu and select **Insert Guest Additions CD Image**.  As soon as this is done, you should see ISO mounted in Windows Explorer:
+
+![Starting Windows: Install Guest Additions](img/guest-additions.png)
+
+Begin the installation by clicking on the necessary installer for your architecture (in our case, it's `amd64`):
+
+![Starting Windows: Install 64-bit Guest Additions](img/vm-additions-install.png)
