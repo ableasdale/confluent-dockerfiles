@@ -112,3 +112,12 @@ You can see the progress indicator as all the components are installed and confi
 
 ![Configure Active Directory: Installation Progress](img/add-roles-wizard-8.png)
 
+### Post Install: Deployment Configuration
+
+Note that after the installation is complete, you'll see an alert for post-deployment:
+
+![Configure Active Directory: Post Deployment](img/post-deployment.png)
+
+First, we're going to select **Add a domain controller to an existing domain** and then give your domain an appopriate name:
+
+![Configure Active Directory: Domain Name](img/post-install-deployment-1.png)
