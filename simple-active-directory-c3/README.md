@@ -79,3 +79,36 @@ On restart, we can now set up Active Directory and prepare the stage for configu
 Starting up, you'll see the `Server Manager` GUI:
 
 ![Configure Active Directory: Server Manager](img/add-roles-and-features.png)
+
+This will start the **Add Roles and Features Wizard**:
+
+![Configure Active Directory: Add Roles and Features Wizard](img/add-roles-wizard-1.png)
+
+From there, select **Role-based or feature-based installation**:
+
+![Configure Active Directory: Installation Type](img/add-roles-wizard-2.png)
+
+In our case, the server is already selected (it's a pool of one..):
+
+![Configure Active Directory: Server Selection](img/add-roles-wizard-3.png)
+
+The next stage will be to add more roles - and we're going to add **Active Directory Domain Services**.  Note that there will be an additional window opened as soon as you select this; confirm by clicking on **Add Features** and finally click **Next**:
+
+![Configure Active Directory: Server Roles](img/add-roles-wizard-4.png)
+
+Now we can choose any additional features; in this case, we can just click **Next**:
+
+![Configure Active Directory: Features](img/add-roles-wizard-5.png)
+
+In the next section, you'll see some general information about **Active Directory Domain Services**, so click **Next**:
+
+![Configure Active Directory: AD DS](img/add-roles-wizard-6.png)
+
+Finally, check **Restart the destination server if required** and click **Install**:
+
+![Configure Active Directory: Confirmation](img/add-roles-wizard-7.png)
+
+You can see the progress indicator as all the components are installed and configured:s
+
+![Configure Active Directory: Installation Progress](img/add-roles-wizard-8.png)
+
