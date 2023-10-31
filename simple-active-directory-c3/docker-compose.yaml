@@ -80,3 +80,4 @@ services:
       CONTROL_CENTER_REST_AUTHENTICATION_METHOD: BASIC
       CONTROL_CENTER_REST_AUTHENTICATION_REALM: c3
       CONTROL_CENTER_OPTS: "-Djava.security.auth.login.config=/tmp/control-center-jaas.conf -Djava.security.debug=all -Djava.security.auth.debug=all -Dorg.eclipse.jetty.util.log.IGNORED=true"
+      
