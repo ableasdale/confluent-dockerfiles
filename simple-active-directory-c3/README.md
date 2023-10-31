@@ -145,3 +145,8 @@ Now we're going to review everything that we have set so far:
 This will be followed by a prerequisites check - this may take some time to complete.  If everything worked as expected, you should see a message stating that **"All prerequisite checks passed successfully"**.  If so, you can click on **Install**:
 
 ![Configure Active Directory: Prerequisites Check](img/post-install-deployment-7.png)
+
+You should see that the process ran to completion; the server will now restart for all the changes to take effect:
+
+![Configure Active Directory: Status and Reboot](img/post-install-deployment-8.png)
+
