@@ -118,6 +118,30 @@ Note that after the installation is complete, you'll see an alert for post-deplo
 
 ![Configure Active Directory: Post Deployment](img/post-deployment.png)
 
-First, we're going to select **Add a domain controller to an existing domain** and then give your domain an appopriate name:
+First, we're going to select **Add a new Forest** and then give your domain an appopriate name (in this example, we're using `adtest.confluent.io`):
 
-![Configure Active Directory: Domain Name](img/post-install-deployment-1.png)
+![Configure Active Directory: Domain Name](img/post-install-deployment-1b.png)
+
+Next we need to set up a password:
+
+![Configure Active Directory: Domain Controller Options](img/post-install-deployment-2.png)
+
+Next, we'll set up DNS - just click Next in this case:
+
+![Configure Active Directory: DNS Options](img/post-install-deployment-3.png)
+
+Next, verify the `NetBIOS` name:
+
+![Configure Active Directory: Additional Options](img/post-install-deployment-4.png)
+
+Confirm the default paths:
+
+![Configure Active Directory: Paths](img/post-install-deployment-5.png)
+
+Now we're going to review everything that we have set so far:
+
+![Configure Active Directory: Review Options](img/post-install-deployment-6.png)
+
+This will be followed by a prerequisites check - this may take some time to complete.  If everything worked as expected, you should see a message stating that **"All prerequisite checks passed successfully"**.  If so, you can click on **Install**:
+
+![Configure Active Directory: Prerequisites Check](img/post-install-deployment-7.png)
