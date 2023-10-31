@@ -69,3 +69,13 @@ In order to install the Guest Additions in Windows, you can navigate to the **De
 Begin the installation by clicking on the necessary installer for your architecture (in our case, it's `amd64`):
 
 ![Starting Windows: Install 64-bit Guest Additions](img/vm-additions-install.png)
+
+Note that you will need to reboot after these have been installed.
+
+### Configure Active Directory
+
+On restart, we can now set up Active Directory and prepare the stage for configuring Confluent Platform and Confluent Control Center.
+
+Starting up, you'll see the `Server Manager` GUI:
+
+![Configure Active Directory: Server Manager](img/add-roles-and-features.png)
