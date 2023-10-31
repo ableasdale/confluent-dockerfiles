@@ -14,6 +14,20 @@ Download the `ISO download`: `64-bit edition`
 
 Install / Run VirtualBox and create a new VM:
 
-Make sure the path to the ISO file is correct and that the checkbox for an unattended installation is selected:
+Make sure the path to the ISO file is correct and that the checkbox to skip an unattended installation (`Skip Unattended Installation`) is selected:
 
-![Unattended Windows Server Install](img/configure-virtualbox-unattended.png)
+![Skip Unattended Windows Server Install](img/configure-virtualbox-unattended.png)
+
+Configure the available memory and CPU resources (and note that you will need to reserve some for running Confluent Platform):
+
+![Configure VM Resources](img/virtualbox-settings.png)
+
+Configure the available disk for the base OS:
+
+![Configure VM Virtual Hard Disk](img/create-vhd.png)
+
+### Configure Virtualbox VM Settings
+
+Now we're going to configure the VM in VirtualBox:
+
+(TODO)
