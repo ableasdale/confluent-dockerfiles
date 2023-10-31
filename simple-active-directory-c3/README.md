@@ -150,3 +150,30 @@ You should see that the process ran to completion; the server will now restart f
 
 ![Configure Active Directory: Status and Reboot](img/post-install-deployment-8.png)
 
+After restarting, log in and search for `dsa` and select `Active Directory Users and Computers`:
+
+![Active Directory Users and Computers](img/dsa.png)
+
+This will give us the view of the directory:
+
+![Active Directory Users and Computers](img/ad-users.png)
+
+Let's test the connection using `ldapsearch`. First, we need to determine the ip address of the VM - open Powershell and run `ipconfig` and note the IP address next to the IPv4 Address, From there, substitute the IP address and run the command below to search the directory as the `Administrator` user:
+
+```bash
+ldapsearch -x -b "CN=Users,DC=ad-test,DC=confluent,dc=io" -H ldap://<IP_ADDR> -D "cn=Administrator,CN=Users,DC=ad-test,DC=confluent,DC=io" -W
+```
+
+For example:
+
+```bash
+ldapsearch -x -b "CN=Users,DC=ad-test,DC=confluent,dc=io" -H ldap://192.168.1.248 -D "cn=Administrator,CN=Users,DC=ad-test,DC=confluent,DC=io" -W
+```
+
+In order to confirm the values for the `-b` and `-D` switches in the above example, we can use `Active Directory Users and Computers`; first we need to enable `Advanced Features` under the `View` menu:
+
+![Active Directory Users and Computers](img/ad-advanced-features.png)
+
+From there, select the `Administrator` user and look at the `distinguishedName` field under the `Attribute Editor`:
+
+![Active Directory: Administrator distinguishedName](img/distinguished-name.png)
