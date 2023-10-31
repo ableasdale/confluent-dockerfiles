@@ -178,5 +178,74 @@ From there, select the `Administrator` user and look at the `distinguishedName` 
 
 ![Active Directory: Administrator distinguishedName](img/distinguished-name.png)
 
-### Testing Confluent Platform and C3
+## Testing Confluent Platform and Confluent Control Center (C3)
 
+The `docker-compose.yaml` file sets up C3 with all the necessary lines of configuration:
+
+```yaml
+      # For LDAP
+      CONTROL_CENTER_REST_AUTHENTICATION_ROLES: Administrators,Guests
+      CONTROL_CENTER_AUTH_RESTRICTED_ROLES: Guests
+      CONTROL_CENTER_REST_AUTHENTICATION_METHOD: BASIC
+      CONTROL_CENTER_REST_AUTHENTICATION_REALM: c3
+      CONTROL_CENTER_OPTS: "-Djava.security.auth.login.config=/tmp/control-center-jaas.conf -Djava.security.debug=all -Djava.security.auth.debug=all -Dorg.eclipse.jetty.util.log.IGNORED=true"
+```
+
+Note that the `CONTROL_CENTER_OPTS` flags are for debug level logging:
+
+```java
+-Djava.security.debug=all -Djava.security.auth.debug=all -Dorg.eclipse.jetty.util.log.IGNORED=true
+```
+
+And the `control-center-jaas.conf` file contains all the necessary configuration to allow C3 to intercept the initial connection and to hand over the lookup to Active Directory:
+
+```javascript
+c3 {
+  org.eclipse.jetty.jaas.spi.LdapLoginModule required
+  
+  useLdaps="false"
+  contextFactory="com.sun.jndi.ldap.LdapCtxFactory"
+  hostname="<YOUR_IP_ADDR_HERE>"
+  port="389"
+  bindDn="CN=Administrator,CN=Users,DC=ad-test,DC=confluent,dc=io"
+  bindPassword="<ADMINISTRATOR_PASSWORD_HERE>"
+  authenticationMethod="simple"
+  forceBindingLogin="true"
+  userBaseDn="CN=Users,DC=ad-test,DC=confluent,DC=io"
+  userRdnAttribute="sAMAccountName"
+  userIdAttribute="sAMAccountName"
+  userPasswordAttribute="userPassword"
+  userObjectClass="person" 
+  roleBaseDn="CN=Builtin,DC=ad-test,DC=confluent,DC=io"
+  roleNameAttribute="cn"
+  roleMemberAttribute="member"
+  roleObjectClass="group"
+  debug="true";
+};
+```
+
+At the very least, you will need to modify the `hostname` (to match the IP address for your Windows instance) and the `bindPassword` (used to query the Active Directory).
+
+You will also need to change the `bindDn`, the `userBaseDn` and the `roleBaseDn` to make these match your Active Directory Domain Name.
+
+When you're ready to start the Confluent components:
+
+```bash
+docker-compose -d up
+```
+
+After a short while, you should be able to access C3:
+
+<http://localhost:9021/>
+
+And you'll see an authentication dialog box:
+
+![C3 Basic Auth Login](img/dialog.png)
+
+In the C3 log, you'll see some logged messages that look like this:
+
+```log
+control-center   | [2023-10-31 13:50:37,928] INFO Attempting authentication: CN=Administrator,CN=Users,DC=ad-test,DC=confluent,DC=io (org.eclipse.jetty.jaas.spi.LdapLoginModule)
+control-center   | 	[LoginContext]: org.eclipse.jetty.jaas.spi.LdapLoginModule login success
+control-center   | 	[LoginContext]: org.eclipse.jetty.jaas.spi.LdapLoginModule commit success
+```
