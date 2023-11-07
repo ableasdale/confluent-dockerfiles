@@ -61,7 +61,7 @@ public class ClientTools {
         final Properties props = new Properties();
         props.put("bootstrap.servers", "broker:9092");
 
-        // This is the necessary configuration for configuring TLS/SSL on the Producer
+        // This is the necessary configuration for configuring TLS/SSL on the Consumer
         props.put("security.protocol", "SSL");
         props.put("ssl.truststore.location", "/etc/kafka/secrets/client.truststore.jks");
         props.put("ssl.truststore.password", "confluent");
