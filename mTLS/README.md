@@ -15,20 +15,76 @@ Start both clusters using the provided `docker-compose.yaml` file:
 docker-compose up
 ```
 
-TOOLS
+Wait for the cluster to start up fully; to do this you can check C3 at <http://localhost:9021/>
+
+## Producing data to the cluster
+
+Produce some data (using TLS); do this by connecting to the `tools` container and runing gradle from `/tmp/mTLS`:
 
 ```bash
-docker exec -it tools bash
-```
-
-Produce some data (using TLS)
-
-```bash
+docker-compose exec tools bash
 cd /tmp/mTLS
 ./gradlew run
 ```
+
+You should see some output like this:
+
+```bash
+09:45:42.078 INFO  io.confluent.csta.Main.main:11 - Running the TLS Producer...
+09:45:43.510 INFO  io.confluent.csta.TLSProducer.main:27 - Sent 0:293536560
+09:45:43.511 INFO  io.confluent.csta.TLSProducer.main:27 - Sent 1:416980828
+09:45:43.515 INFO  io.confluent.csta.TLSProducer.main:27 - Sent 2:311873768
+09:45:43.515 INFO  io.confluent.csta.TLSProducer.main:27 - Sent 3:586727041
+09:45:43.515 INFO  io.confluent.csta.TLSProducer.main:27 - Sent 4:186154275
+09:45:43.544 INFO  io.confluent.csta.Main.main:13 - Running the TLS Consumer...
+09:45:46.839 INFO  io.confluent.csta.TLSConsumer.main:25 - Partition: 0 Offset: 0 Value: 293536560 Thread Id: 1
+09:45:46.839 INFO  io.confluent.csta.TLSConsumer.main:25 - Partition: 0 Offset: 1 Value: 416980828 Thread Id: 1
+09:45:46.839 INFO  io.confluent.csta.TLSConsumer.main:25 - Partition: 0 Offset: 2 Value: 311873768 Thread Id: 1
+09:45:46.840 INFO  io.confluent.csta.TLSConsumer.main:25 - Partition: 0 Offset: 3 Value: 586727041 Thread Id: 1
+09:45:46.840 INFO  io.confluent.csta.TLSConsumer.main:25 - Partition: 0 Offset: 4 Value: 186154275 Thread Id: 1
+```
+
+## Exploring the TLS Producer and Consumer code
+
+If you look in `src/main/java`, there are examples for Producer, Consumer, ReST Proxy and Schema Registry clients.
+
+If you look in `ClientTools.java`, for the Consumer we would need the following lines in the configuration map to allow it to access the truststore and keystore (and passwords):
+
+```java
+        props.put("bootstrap.servers", "broker:9092");
+
+        // This is the necessary configuration for configuring TLS/SSL on the Producer
+        props.put("security.protocol", "SSL");
+        props.put("ssl.truststore.location", "/etc/kafka/secrets/client.truststore.jks");
+        props.put("ssl.truststore.password", "confluent");
+        props.put("ssl.keystore.location", "/etc/kafka/secrets/client.keystore.jks");
+        props.put("ssl.keystore.password", "confluent");
+        props.put("schema.registry.url", "https://schema-registry:8081");
+```
+
+Similarly for the Producer:
+
+```java
+        props.put("bootstrap.servers", "broker:9092");
+
+        // This is the necessary configuration for configuring TLS/SSL on the Producer
+        props.put("security.protocol", "SSL");
+        props.put("ssl.truststore.location", "/etc/kafka/secrets/client.truststore.jks");
+        props.put("ssl.truststore.password", "confluent");
+        props.put("ssl.keystore.location", "/etc/kafka/secrets/client.keystore.jks");
+        props.put("ssl.keystore.password", "confluent");
+        props.put("schema.registry.url", "https://schema-registry:8081");
+```
+
+Note that in both cases, you're specifying `https` when you connect to the Schema Registry instance.
 
 ## Endpoints
 
 - <http://localhost:9021/>
 - <http://localhost:8082/>
+
+## Exploring TOOLS
+
+```bash
+docker exec -it tools bash
+```
