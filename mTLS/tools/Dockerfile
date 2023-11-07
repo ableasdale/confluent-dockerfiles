@@ -24,8 +24,8 @@ RUN apt-get update \
         htop \
         linux-tools-common \
         linux-tools-generic \
-    && curl -fsSLo kafka.tgz https://downloads.apache.org/kafka/3.4.0/kafka_2.13-3.4.0.tgz \
+    && curl -fsSLo kafka.tgz https://downloads.apache.org/kafka/3.5.1/kafka_2.13-3.5.1.tgz \
     && tar -xzf kafka.tgz \
-    && mv kafka_2.13-3.4.0 /opt/kafka \
+    && mv kafka_2.13-3.5.1 /opt/kafka \
     && curl --http1.1 -L https://cnfl.io/cli | sh -s -- -b /usr/bin v3.15.0 \
     && rm -rf /var/lib/apt/lists/*
