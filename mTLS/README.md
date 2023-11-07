@@ -83,8 +83,52 @@ Note that in both cases, you're specifying `https` when you connect to the Schem
 - <http://localhost:9021/>
 - <http://localhost:8082/>
 
-## Exploring TOOLS
+## Exploring the `tools` container
+
+If you want to explore the cluster using the command-line, there is a container called `tools`, which is configured with a number of applications (see the `Dockerfile` in the `tools` directory if you want to see what gets installed).   To connect to the instance, you can run:
 
 ```bash
 docker exec -it tools bash
+```
+
+Or if you prefer:
+
+```bash
+docker-compose exec tools bash
+```
+
+From there, you can find the keystores and truststores in `/etc/kafka/secrets`.
+
+### Running a Consumer from the container
+
+Consumer without TLS on port 9091:
+
+```bash
+cd /opt/kafka/bin/
+./kafka-console-consumer.sh --bootstrap-server broker:9091 --topic test-topic --from-beginning
+```
+
+Consumer with TLS on port 9092:
+
+```bash
+./kafka-console-consumer.sh --bootstrap-server broker:9092 --topic test-topic --from-beginning --consumer.config /tmp/client.properties
+```
+
+where `/tmp/client.properties` contains the following:
+
+```properties
+security.protocol=SSL
+ssl.truststore.location=/etc/kafka/secrets/client.truststore.jks
+ssl.truststore.password=confluent
+ssl.keystore.location=/etc/kafka/secrets/client.keystore.jks
+ssl.keystore.password=confluent
+ssl.key.password=confluent
+```
+
+### Producing with TLS
+
+Similarly, you can use the same `client.properties` to configure the `kafka-console-producer` with TLS:
+
+```bash
+./kafka-console-producer.sh --bootstrap-server broker:9092 --topic test-topic --producer.config /tmp/client.properties
 ```
