@@ -133,7 +133,7 @@ Similarly, you can use the same `client.properties` to configure the `kafka-cons
 ./kafka-console-producer.sh --bootstrap-server broker:9092 --topic test-topic --producer.config /tmp/client.properties
 ```
 
-### Administration using `kafka-topics`:
+### Administration using `kafka-topics`
 
 You can use `--command-config` for the kafka-topics command:
 
@@ -149,7 +149,7 @@ Similarly we can use `--describe` to view the status of a topic:
 
 ### Performance testing
 
-This is an example of how TLS can be configured for `kafka-producer-perf-test`:
+This is an example of how TLS can be configured for use with `kafka-producer-perf-test`:
 
 ```bash
 ./kafka-producer-perf-test.sh --producer.config /tmp/client.properties --throughput 0 --num-records 1 --topic perf --record-size 10 --producer-props bootstrap.servers=broker:9092
