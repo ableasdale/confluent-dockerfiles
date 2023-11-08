@@ -164,7 +164,7 @@ services:
       CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
-      CONTROL_CENTER_REST_LISTENERS: "http://0.0.0.0:9021"
+      CONTROL_CENTER_REST_LISTENERS: "https://0.0.0.0:9021"
       CONTROL_CENTER_REST_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/control-center.truststore.jks
       CONTROL_CENTER_REST_SSL_TRUSTSTORE_PASSWORD: confluent
       CONTROL_CENTER_REST_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/control-center.keystore.jks
@@ -187,32 +187,3 @@ services:
       - ./security:/etc/kafka/secrets
     entrypoint: /bin/bash
     tty: true
-
-  newtools:
-    image: eclipse-temurin:17-jdk-jammy
-    hostname: newtools    
-    container_name: newtools
-    volumes:
-      - .:/tmp/app
-      - ./security:/etc/kafka/secrets
-    
-  # older kafka-tools  
-  kafka-tools:
-    build:
-      context: ./kafka-tools
-    depends_on:
-      - broker
-    container_name: kafka-tools
-    volumes:
-      - .:/tmp/app
-      - ./security:/etc/kafka/secrets
-    environment:
-      KAFKA_LOG4J_ROOT_LOGLEVEL: ERROR
-      KAFKA_SECURITY_PROTOCOL: SSL
-      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
-      KAFKA_HEAP_OPTS: "-Xmx1G -Xms1G"
-      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka-tools.truststore.jks
-      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka-tools.keystore.jks
-      KAFKA_SSL_TRUSTSTORE_PASSWORD: confluent
-      KAFKA_SSL_KEYSTORE_PASSWORD: confluent
-      KAFKA_SSL_KEY_PASSWORD: confluent
