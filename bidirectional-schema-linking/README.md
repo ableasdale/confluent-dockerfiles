@@ -64,6 +64,18 @@ TODO: you should see JSON output...
 
 ```
 // "topic.rename.format": "${topic}.replica",
+
+curl -i -X POST http://localhost:8083/connectors \
+     -H "Content-Type: application/json" \
+     -d @./config/src-to-src-replicator.json
+
+curl -i -X POST http://localhost:8083/connectors \
+     -H "Content-Type: application/json" \
+     -d @./config/src-to-tgt-replicator.json
+
+      "src.consumer.fetch.min.bytes": "8000",
+      "src.consumer.fetch.max.wait.ms": "500",
+      "src.consumer.max.partition.fetch.bytes": "10485760"
 ```
 
 Note that the configuration for this Replicator instance can be found in `config/src-to-target-replicator.json`.
@@ -73,7 +85,7 @@ Note that the configuration for this Replicator instance can be found in `config
 We want to ensure that data is being replicated and we want to ensure our Replicator is configured with decent throughput, so we're going to use the `kafka-producer-perf-test` tool for that:
 
 ```bash
-docker-compose exec broker kafka-producer-perf-test --throughput -1 --num-records 1000000 --topic replicate-me --record-size 1000 --producer-props bootstrap.servers=broker:29091 acks=all
+docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 1000000 --topic shiz --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all
 ```
 
 
