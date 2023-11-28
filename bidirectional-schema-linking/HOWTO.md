@@ -1,6 +1,9 @@
-# Schema Linking Walkthrough
+# Schema Linking Walkthrough Scenarios
 
-We're going to cover two scenarios in this walkthrough: an Active/Passive Schema Registry setup (where only one Schema Registry can be written to) and a way to perform an Active/Active setup - we will show the drawbacks and trade-offs for both solutions.
+We're going to cover two scenarios in this walkthrough:
+
+An Active/Passive Schema Registry setup (where only one Schema Registry can be written to).
+Then we will demonstrate a way to perform an Active/Active setup - we will show the drawbacks and trade-offs for both solutions.
 
 ## Getting Started
 
@@ -39,7 +42,7 @@ docker-compose exec schemaregistry schema-exporter --list --schema.registry.url 
 
 You shoudld see the link being listed in the response:
 
-```json
+```bash
 [src-to-tgt-link]
 ```
 
