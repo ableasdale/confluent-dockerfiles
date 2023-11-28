@@ -1,5 +1,8 @@
+# Schema Linking Walkthrough
 
+We're going to cover two scenarios in this walkthrough: an Active/Passive Schema Registry setup (where only one Schema Registry can be written to) and a way to perform an Active/Active setup - we will show the drawbacks and trade-offs for both solutions.
 
+## Bidirectional Cluster Linking walkthrough
 
 Schema Exporter from Source to Target cluster
 
@@ -77,6 +80,47 @@ curl http://localhost:8081/subjects/
 ```json
 [":.target:stock_trades-value","pageviews-value"]
 ```
+
+❯ curl http://localhost:8081/subjects/pageviews-value/versions/1
+{"subject":"pageviews-value","version":1,"id":1,"schema":"{\"type\":\"record\",\"name\":\"pageviews\",\"namespace\":\"ksql\",\"fields\":[{\"name\":\"viewtime\",\"type\":\"long\"},{\"name\":\"userid\",\"type\":\"string\"},{\"name\":\"pageid\",\"type\":\"string\"}],\"connect.name\":\"ksql.pageviews\"}"}%
+
+❯ curl http://localhost:8082/subjects/pageviews-value/versions/1
+{"subject":":.source:pageviews-value","version":1,"id":1,"schema":"{\"type\":\"record\",\"name\":\"pageviews\",\"namespace\":\"ksql\",\"fields\":[{\"name\":\"viewtime\",\"type\":\"long\"},{\"name\":\"userid\",\"type\":\"string\"},{\"name\":\"pageid\",\"type\":\"string\"}],\"connect.name\":\"ksql.pageviews\"}"}%
+
+nc -zv localhost 8081
+telnet localhost 8081
+curl -X GET http://localhost:8081/config
+
+## Explore the Schema Contexts
+
+```bash
+curl -X GET http://localhost:8081/contexts
+```
+
+```json
+[".",".target"]
+```
+
+confluent-dockerfiles/bidirectional-schema-linking on  main [!?] via 🐳 desktop-linux on ☁️  (eu-west-2)
+❯ curl -X GET http://localhost:8082/contexts
+[".",".source"]%
+
+Get schemas from all contexts:
+
+```bash
+curl -X GET http://localhost:8082/schemas?subjectPrefix=:*:
+```
+
+Get schemas from a given Schema Registry Context:
+
+```bash
+curl -X GET http://localhost:8082/schemas?subjectPrefix=:.source:
+```
+
+```bash
+curl -X GET http://localhost:8081/schemas?subjectPrefix=:.target:
+```
+
 
 
 Schema Exporter from Source to Target cluster
