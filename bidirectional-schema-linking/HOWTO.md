@@ -153,6 +153,39 @@ Next we'll look at the Active/Active configuration - and you'll see why the Acti
 
 ## Active/Active Setup
 
+For an **Active/Active** setup, we're going to set up `schema-exporter` for bi-directional Schema Linking, so we're going to maintain two links:
+
+- One going from the Schema Registries of the `source` to the `target` cluster.
+- One going from the Schema Registries of the `target` to the `source` cluster.
+
+We're going to start by demonstrating the process for replicating a subject on each side:
+
+- On the `source` cluster, we're going to replicate the `pageviews-value` subject over to our `target` cluster.
+- On the `target` cluster, we're going to replicate the `stock_trades-value` subject over to our `source` cluster.
+
+### Configure Schema Exporter to replicate from Source to Target cluster
+
+First, let's configure Schema Exporter to replicate the `pageviews-value` subject from Source to Target cluster
+
+```bash
+docker-compose exec schemaregistry schema-exporter --create --name src-to-tgt-link \
+    --config-file /tmp/config/schemalink-src.cfg --subjects pageviews-value \
+    --schema.registry.url http://schemaregistry:8081 \
+    --context-name source --context-type CUSTOM
+```
+
+### Configure Schema Exporter to replicate from Target and Source cluster
+
+Secondly, the Schema Exporter will be configured to replicate the `stock_trades-value` subject from the Target to Source cluster
+
+```bash
+docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-link \
+    --config-file /tmp/config/schemalink-tgt.cfg --subjects stock_trades-value \
+    --schema.registry.url http://schemaregistry2:8082 \
+    --context-name target --context-type CUSTOM
+```
+
+
 
 ---- NOTES BELOW
 
@@ -174,21 +207,7 @@ docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-l
 
 Schema Exporter from Source to Target cluster
 
-```bash
-docker-compose exec schemaregistry schema-exporter --create --name src-to-tgt-link \
-    --config-file /tmp/config/schemalink-src.cfg --subjects pageviews-value \
-    --schema.registry.url http://schemaregistry:8081 \
-    --context-name source --context-type CUSTOM
-```
 
-Schema Exporter from Target to Source cluster
-
-```bash
-docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-link \
-    --config-file /tmp/config/schemalink-tgt.cfg --subjects stock_trades-value \
-    --schema.registry.url http://schemaregistry2:8082 \
-    --context-name target --context-type CUSTOM
-```
 
     curl --silent -X PUT http://localhost:8086/mode/:.left: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
     # confirm change was applied
