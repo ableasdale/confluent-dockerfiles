@@ -434,11 +434,79 @@ ZJZZT : {"side":"BUY","quantity":3357,"symbol":"ZJZZT","price":744,"account":"LM
 ZBZX : {"side":"SELL","quantity":700,"symbol":"ZBZX","price":412,"account":"XYZ789","userid":"User_9"}
 ```
 
+To clean up everything and restart, run:
+
+```bash
+docker-compose down && docker container prune -f && docker-compose up -d
+```
+
+(TODO - check ^^)
+
 ## Schema Linking: Active/Active Setup (with replicated Contexts)
 
 Now we're going to do something a little different - rather than specifying individual `--subjects`, we're going to just replicate the Default context on each Schema Registry to a separate Context on both sides.
 
-We will start by creating the Cluster Links
+We will start by creating the Cluster Links - note that we're not specifying subjects in either case this time:
+
+### Schema Exporter from Source to Target cluster
+
+```bash
+docker-compose exec schemaregistry schema-exporter --create --name src-to-tgt-link \
+    --config-file /tmp/config/schemalink-src.cfg \
+    --schema.registry.url http://schemaregistry:8081 \
+    --context-name source --context-type CUSTOM
+```
+
+### Schema Exporter from Target to Source cluster
+
+```bash
+docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-link \
+    --config-file /tmp/config/schemalink-tgt.cfg \
+    --schema.registry.url http://schemaregistry2:8082 \
+    --context-name target --context-type CUSTOM
+```
+
+As with the previous run, you should see the following responses respectively:
+
+```bash
+Successfully created exporter src-to-tgt-link
+Successfully created exporter tgt-to-src-link
+```
+
+Before we can configure the Datagen connectors, we need to add a further step for this to work - we need to set our `source` and `target` Contexts (on the `target` and the `source` host respectively) into `IMPORT` mode; failure to do this will cause Connectors to fail to start.
+
+### Set the `source` Context into `IMPORT` mode
+
+```bash
+curl --silent -X PUT http://localhost:8082/mode/:.source: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
+```
+
+You should see the following JSON in the response:
+
+```json
+{"mode":"IMPORT"}
+```
+
+Let's confirm that the `.source` context has been set to `IMPORT` mode:
+
+```bash
+curl --silent -X GET http://localhost:8082/mode/:.source: | jq
+```
+
+And we should see this confirmed in the response:
+
+```json
+{
+  "mode": "IMPORT"
+}
+```
+
+
+
+
+curl -X GET http://localhost:8082/mode/:.source: | jq
+
+
 
 
 
@@ -498,14 +566,7 @@ docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-l
 
 
 
-Schema Exporter from Source to Target cluster
 
-```bash
-docker-compose exec schemaregistry schema-exporter --create --name src-to-tgt-link \
-    --config-file /tmp/config/schemalink-src.cfg \
-    --schema.registry.url http://schemaregistry:8081 \
-    --context-name source --context-type CUSTOM
-```
 
 Then
 
@@ -524,14 +585,7 @@ You should see:
 {"mode":"IMPORT"}
 ```
 
-Schema Exporter from Target to Source cluster
 
-```bash
-docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-link \
-    --config-file /tmp/config/schemalink-tgt.cfg \
-    --schema.registry.url http://schemaregistry2:8082 \
-    --context-name target --context-type CUSTOM
-```
 
 docker-compose exec schemaregistry2 schema-exporter --list --schema.registry.url http://schemaregistry2:8082
 
