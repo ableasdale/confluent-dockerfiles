@@ -2,6 +2,41 @@
 
 We're going to cover two scenarios in this walkthrough: an Active/Passive Schema Registry setup (where only one Schema Registry can be written to) and a way to perform an Active/Active setup - we will show the drawbacks and trade-offs for both solutions.
 
+## Getting Started
+
+Start up all the containers for this demo:
+
+```bash
+docker-compose up -d
+```
+
+Then visit <http://localhost:9021/> to confirm that Confluent Control Center is available.
+
+## Active/Passive Setup
+
+First we will start by configuring Schema Linking to copy the default context from one Schema Registry to another - in this setup, we have one Schema Registry which is writeable and the other that is read-only.  We will start by setting up this configuration.
+
+### Configure Schema Exporter from Source to Target cluster
+
+```bash
+docker-compose exec schemaregistry schema-exporter --create --name src-to-tgt-link \
+    --config-file /tmp/config/schemalink-src.cfg \
+    --schema.registry.url http://schemaregistry:8081 \
+    --context-type NONE
+```
+
+### Configure Schema Exporter from Target to Source cluster
+
+```bash
+docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-link \
+    --config-file /tmp/config/schemalink-tgt.cfg \
+    --schema.registry.url http://schemaregistry2:8082 \
+    --context-type NONE
+```
+
+
+
+
 ## Bidirectional Cluster Linking walkthrough
 
 Schema Exporter from Source to Target cluster
@@ -21,6 +56,12 @@ docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-l
     --schema.registry.url http://schemaregistry2:8082 \
     --context-name target --context-type CUSTOM
 ```
+
+    curl --silent -X PUT http://localhost:8086/mode/:.left: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
+    # confirm change was applied
+    curl --silent -X GET http://localhost:8086/mode/:.left:
+
+curl --silent -X GET http://localhost:8081/mode/:.target:
 
 
 ## This set works
@@ -56,6 +97,23 @@ docker-compose exec schemaregistry schema-exporter --create --name src-to-tgt-li
     --context-name source --context-type CUSTOM
 ```
 
+Then
+
+```bash
+curl -X GET http://localhost:8081/contexts
+```
+curl --silent -X PUT http://localhost:8082/mode/:.source: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
+
+Confirm
+
+curl --silent -X GET http://localhost:8082/mode/:.source:
+
+You should see:
+
+```json
+{"mode":"IMPORT"}
+```
+
 Schema Exporter from Target to Source cluster
 
 ```bash
@@ -64,6 +122,10 @@ docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-l
     --schema.registry.url http://schemaregistry2:8082 \
     --context-name target --context-type CUSTOM
 ```
+
+curl --silent -X PUT http://localhost:8081/mode/:.target: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
+
+curl --silent -X GET http://localhost:8081/mode/:.target:
 
 ```bash
 curl http://localhost:8082/subjects/
@@ -101,9 +163,15 @@ curl -X GET http://localhost:8081/contexts
 [".",".target"]
 ```
 
-confluent-dockerfiles/bidirectional-schema-linking on  main [!?] via 🐳 desktop-linux on ☁️  (eu-west-2)
-❯ curl -X GET http://localhost:8082/contexts
-[".",".source"]%
+```bash
+curl -X GET http://localhost:8082/contexts
+```
+
+```json
+[".",".source"]
+```
+
+curl --silent -X PUT http://localhost:8082/mode/:.source: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
 
 Get schemas from all contexts:
 
@@ -123,23 +191,7 @@ curl -X GET http://localhost:8081/schemas?subjectPrefix=:.target:
 
 
 
-Schema Exporter from Source to Target cluster
 
-```bash
-docker-compose exec schemaregistry schema-exporter --create --name src-to-tgt-link \
-    --config-file /tmp/config/schemalink-src.cfg \
-    --schema.registry.url http://schemaregistry:8081 \
-    --context-type NONE
-```
-
-Schema Exporter from Target to Source cluster
-
-```bash
-docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-link \
-    --config-file /tmp/config/schemalink-tgt.cfg \
-    --schema.registry.url http://schemaregistry2:8082 \
-    --context-type NONE
-```
 
 
 docker-compose exec schemaregistry schema-exporter --list --schema.registry.url http://schemaregistry:8081
