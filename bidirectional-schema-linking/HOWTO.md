@@ -25,6 +25,134 @@ docker-compose exec schemaregistry schema-exporter --create --name src-to-tgt-li
     --context-type NONE
 ```
 
+You should see the message in response:
+
+```bash
+Successfully created exporter src-to-tgt-link
+```
+
+Verify that the Schema Link is available:
+
+```bash
+docker-compose exec schemaregistry schema-exporter --list --schema.registry.url http://schemaregistry:8081
+```
+
+You shoudld see the link being listed in the response:
+
+```json
+[src-to-tgt-link]
+```
+
+The following command can be run (`--get-status`) to confirm that the link is running as expected:
+
+```bash
+docker-compose exec schemaregistry schema-exporter --get-status --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081
+```
+
+You should see something like this in response:
+
+```json
+{"name":"src-to-tgt-link","state":"RUNNING","offset":-1,"ts":0}
+```
+
+Let's start a connector and make sure we can see the Schema on both sides:
+
+#### Create `pageviews` Datagen on Source
+
+```bash
+curl -i -X PUT http://localhost:8083/connectors/pageviews/config \
+     -H "Content-Type: application/json" \
+     -d '{
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "kafka.topic": "pageviews",
+            "quickstart": "pageviews",
+            "max.interval": 1000,
+            "iterations": 10000000,
+            "tasks.max": "1"
+        }'
+```
+
+You should see an `HTTP 201` response code:
+
+```bash
+HTTP/1.1 201 Created
+```
+
+If you run this request to get the list of subjects:
+
+```bash
+curl http://localhost:8081/subjects/
+```
+
+You should see this in response:
+
+```json
+["pageviews-value"]
+```
+
+Let's now confirm that the Schema is available on the second Schema Registry instance:
+
+```bash
+curl http://localhost:8082/subjects/
+```
+
+This confirms that the Schema is available:
+
+```json
+["pageviews-value"]
+```
+
+#### Demonstrate that the Schema is identical on both sides
+
+```bash
+curl http://localhost:8081/subjects/pageviews-value/versions/1 | md5
+curl http://localhost:8082/subjects/pageviews-value/versions/1 | md5
+```
+
+In both cases, we can confirm that the MD5 checksum is identical:
+
+```bash
+7586b6964c0772cad625264fea2ddc49
+```
+
+Let's read some of those messages back:
+
+```bash
+docker-compose exec connect kafka-avro-console-consumer \
+ --bootstrap-server broker:29091 \
+ --property schema.registry.url=http://schemaregistry:8081 \
+ --topic pageviews \
+ --property print.key=true \
+ --property key.deserializer=org.apache.kafka.common.serialization.StringDeserializer \
+ --property key.separator=" : " \
+ --max-messages 10
+```
+
+Okay - that's great; it shows us that we can retrieve the original schema and use `kafka-avro-console-consumer` to read back the messages.  Let's now perform the same operation - only this time, we're specifying the second Schema Registry instance (reading the Schema Linked copy of the Schema):
+
+```bash
+docker-compose exec connect2 kafka-avro-console-consumer \
+ --bootstrap-server broker:29091 \
+ --property schema.registry.url=http://schemaregistry2:8082 \
+ --topic pageviews \
+ --property print.key=true \
+ --property key.deserializer=org.apache.kafka.common.serialization.StringDeserializer \
+ --property key.separator=" : " \
+ --max-messages 10
+```
+
+Important to note here that while we're retrieving the Schema from our second (`read-only`) Schema Registry although we're retrieving the messages from the first Kafka broker - this is because we're not replicating the Datagen data in this example.
+
+So that covers Schema Linking using the Default Context of the first Schema Registry and replicating that to the Default Context of the second Schema Registry.  
+
+Next we'll look at the Active/Active configuration - and you'll see why the Active/Passive architecture has some advantages through it's simplicity.
+
+## Active/Active Setup
+
+
+---- NOTES BELOW
+
 ### Configure Schema Exporter from Target to Source cluster
 
 ```bash
@@ -33,6 +161,8 @@ docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-l
     --schema.registry.url http://schemaregistry2:8082 \
     --context-type NONE
 ```
+
+
 
 
 
@@ -123,6 +253,8 @@ docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-l
     --context-name target --context-type CUSTOM
 ```
 
+docker-compose exec schemaregistry2 schema-exporter --list --schema.registry.url http://schemaregistry2:8082
+
 curl --silent -X PUT http://localhost:8081/mode/:.target: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
 
 curl --silent -X GET http://localhost:8081/mode/:.target:
@@ -209,10 +341,7 @@ curl http://localhost:8082/subjects/
 curl http://localhost:8081/subjects/pageviews-value/versions/1
 curl http://localhost:8081/schemas/ids/1 | jq
 
-### Prove that the Schema is identical on both sides
 
-curl http://localhost:8081/subjects/pageviews-value/versions/1 | md5
-curl http://localhost:8082/subjects/pageviews-value/versions/1 | md5
 
 
 ## Consume from topic using both SR instances
