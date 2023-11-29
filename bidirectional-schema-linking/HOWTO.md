@@ -369,7 +369,7 @@ So it looks like there are no issues reading the topic data when using the schem
 Just as a quick reminder:
 
 ```bash
-curl http://localhost:8082/subjects/
+curl http://localhost:8082/subjects/ | jq
 ```
 
 ```json
@@ -377,7 +377,7 @@ curl http://localhost:8082/subjects/
 ```
 
 ```bash
-curl http://localhost:8081/subjects/
+curl http://localhost:8081/subjects/ | jq
 ```
 
 ```json
@@ -450,7 +450,90 @@ docker-compose down && docker container prune -f && docker-compose up -d
 
 Now we're going to do something a little different - rather than specifying individual `--subjects`, we're going to just replicate the Default context on each Schema Registry to a separate Context on both sides.
 
-We will start by creating the Cluster Links - note that we're not specifying subjects in either case this time:
+We will start by creating our two `Datagen` connectors:
+
+### Create `pageviews` Datagen on the Source
+
+```bash
+curl -i -X PUT http://localhost:8083/connectors/pageviews/config \
+     -H "Content-Type: application/json" \
+     -d '{
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "kafka.topic": "pageviews",
+            "quickstart": "pageviews",
+            "max.interval": 1000,
+            "iterations": 10000000,
+            "tasks.max": "1"
+        }'
+```
+
+If successful, the output response from this `curl` request should return an `HTTP 201` Status code:
+
+```bash
+HTTP/1.1 201 Created
+```
+
+### Create `stock_trades` Datagen on the Target
+
+```bash
+curl -i -X PUT http://localhost:8084/connectors/stock_trades/config \
+     -H "Content-Type: application/json" \
+     -d '{
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "kafka.topic": "stock_trades",
+            "quickstart": "stock_trades",
+            "max.interval": 1000,
+            "iterations": 10000000,
+            "tasks.max": "1"
+        }'
+```
+
+Again, the output response from this `curl` request should return an `HTTP 201` Status code:
+
+```bash
+HTTP/1.1 201 Created
+```
+
+From here, let's check Control Center to confirm that both Connectors are running and that the `pageviews` and the `stock_trades` topics are both receiving messages.
+
+### Schema Linking (bi-directional)
+
+Next step will be to create our replica contexts by creating the Schema Exporters - note that we're not specifying subjects in either case this time.
+
+### Schema Exporter from `Source` to `Target` cluster
+
+TODO...
+
+```bash
+docker-compose exec schemaregistry schema-exporter --create \
+    --name src-to-tgt-link \
+    --config-file /tmp/config/schemalink-src.cfg \
+    --schema.registry.url http://schemaregistry:8081 \
+    --context-name source --context-type CUSTOM
+```
+
+### Schema Exporter from the `Target` to the `Source` Schema Registries
+
+We should TODO...
+
+```bash
+docker-compose exec schemaregistry2 schema-exporter --create \
+    --name tgt-to-src-link \
+    --config-file /tmp/config/schemalink-tgt.cfg \
+    --schema.registry.url http://schemaregistry2:8082 \
+    --context-name target --context-type CUSTOM
+```
+
+
+
+
+
+
+
+
+
 
 ### DEBUG notes
 
@@ -468,16 +551,16 @@ curl --silent http://localhost:8082/subjects/pageviews-value/versions/1 | jq
 [2023-11-28 23:27:54,421] ERROR Error during export: io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Subject :.target.source:pageviews-value is not in import mode; error code: 42205
 ```
 
-
-### Schema Exporter from Source to Target cluster
+v1
 
 ```bash
 docker-compose exec schemaregistry schema-exporter --create \
-    --name src-to-tgt-link --subjects "*" \
+    --name src-to-tgt-link3 --subjects "*" \
     --config-file /tmp/config/schemalink-src.cfg \
     --schema.registry.url http://schemaregistry:8081 \
-    --context-name source --context-type CUSTOM
+    --context-name source3 --context-type CUSTOM
 ```
+
 
 Describe it:
 
@@ -486,17 +569,23 @@ docker-compose exec schemaregistry schema-exporter --describe --name src-to-tgt-
 ```
 
 // TODO --subjects ":*:" 
+See: https://docs.confluent.io/cloud/current/sr/schema-linking.html#configuration-options  
 
-### Schema Exporter from Target to Source cluster
 
+
+v2
 ```bash
 docker-compose exec schemaregistry2 schema-exporter --create \
-    --name tgt-to-src-link --subjects "*" \
+    --name tgt-to-src-link3 --subjects "*" \
     --config-file /tmp/config/schemalink-tgt.cfg \
     --schema.registry.url http://schemaregistry2:8082 \
-    --context-name target --context-type CUSTOM
+    --context-name target3 --context-type CUSTOM
 ```
 
+curl --silent -X GET "http://localhost:8082/mode/:.source:pageviews-value" | jq
+
+
+// --subjects "*" 
 docker-compose exec schemaregistry2 schema-exporter --describe --name tgt-to-src-link --schema.registry.url http://schemaregistry2:8082
 
 // --subjects "*"
@@ -592,53 +681,7 @@ The response should confirm this:
 }
 ```
 
-Okay - we're now ready to create our `Datagen` connectors.
 
-### Create `pageviews` Datagen on the Source
-
-```bash
-curl -i -X PUT http://localhost:8083/connectors/pageviews/config \
-     -H "Content-Type: application/json" \
-     -d '{
-            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
-            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-            "kafka.topic": "pageviews",
-            "quickstart": "pageviews",
-            "max.interval": 1000,
-            "iterations": 10000000,
-            "tasks.max": "1"
-        }'
-```
-
-If successful, the output response from this `curl` request should return an `HTTP 201` Status code:
-
-```bash
-HTTP/1.1 201 Created
-```
-
-### Create `stock_trades` Datagen on the Target
-
-```bash
-curl -i -X PUT http://localhost:8084/connectors/stock_trades/config \
-     -H "Content-Type: application/json" \
-     -d '{
-            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
-            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-            "kafka.topic": "stock_trades",
-            "quickstart": "stock_trades",
-            "max.interval": 1000,
-            "iterations": 10000000,
-            "tasks.max": "1"
-        }'
-```
-
-Again, the output response from this `curl` request should return an `HTTP 201` Status code:
-
-```bash
-HTTP/1.1 201 Created
-```
-
-From here, let's check Control Center to confirm that both Connectors are running and that the `pageviews` and the `stock_trades` topics are both receiving messages.
 
 ### Subjects and Contexts in more detail
 
