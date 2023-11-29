@@ -2,8 +2,8 @@
 
 We're going to cover two scenarios in this walkthrough:
 
-An Active/Passive Schema Registry setup (where only one Schema Registry can be written to).
-Then we will demonstrate a way to perform an Active/Active setup - we will show the drawbacks and trade-offs for both solutions.
+An **Active/Passive** Schema Registry setup (where only one Schema Registry can be written to).
+Then we will demonstrate a way to perform an **Active/Active** setup - we will show the drawbacks and trade-offs for both solutions.
 
 ## Getting Started
 
@@ -149,7 +149,7 @@ Important to note here that while we're retrieving the Schema from our second (`
 
 So that covers Schema Linking using the Default Context of the first Schema Registry and replicating that to the Default Context of the second Schema Registry.  
 
-Next we'll look at the Active/Active configuration - and you'll see why the Active/Passive architecture has some advantages through it's simplicity.
+Next we'll look at the **Active/Active** configuration - and you'll see why the **Active/Passive** architecture has some advantages through it's simplicity.
 
 To clean up everything and restart, run:
 
@@ -311,7 +311,7 @@ curl -X GET http://localhost:8082/contexts
 
 In order for the writes to happen (to the default Context) on both sides, we've created contexts on each side to represent the inbound schema data on the other side; so on the `source` Schema Registry, we now have a `target` context; and on the `target` Schema Registry, we have our `source` context.
 
-So what does this mean for our schemas? Let's inspect the same two again..  Starting with the `pageviews-value` subject on the `source` Schema Registry:
+So what does this mean for our schemas? Let's inspect the same two again - starting with the `pageviews-value` subject on the `source` Schema Registry:
 
 ```bash
 curl http://localhost:8081/subjects/pageviews-value/versions/1
@@ -331,7 +331,7 @@ If we inspect the `pageviews-value` subject on the `target` Schema Registry:
 
 We can immediately see why the `MD5` checksums were different - when Schema Linking is used with Contexts, Schema Registry adds a namespace segment to the subject name.
 
-So what does this mean for our Consumers?  We will start by attempting to read the topic data using the `source` Schema Registry first: 
+So what does this mean for our Consumers?  We will start by attempting to read the topic data using the `source` Schema Registry first:
 
 ```bash
 docker-compose exec connect kafka-avro-console-consumer \
@@ -369,19 +369,27 @@ So it looks like there are no issues reading the topic data when using the schem
 Just as a quick reminder:
 
 ```bash
-curl http://localhost:8082/subjects/ | jq
+curl --silent http://localhost:8082/subjects/ | jq
 ```
 
+And we should see:
+
 ```json
-[":.source:pageviews-value","stock_trades-value"]
+[
+  ":.source:pageviews-value",
+  "stock_trades-value"
+]
 ```
 
 ```bash
-curl http://localhost:8081/subjects/ | jq
+curl --silent http://localhost:8081/subjects/ | jq
 ```
 
 ```json
-[":.target:stock_trades-value","pageviews-value"]
+[
+  ":.target:stock_trades-value",
+  "pageviews-value"
+]
 ```
 
 We want to read our `stock_trades-value` schema from the `target` cluster (the one configured to listen on port `8082`) and we're going to read the replicated schema (`:.target:stock_trades-value`) from our `source` cluster (listening on port `8081`).
@@ -688,7 +696,7 @@ You can get the status of your `schema-exporter` instance using the `--get-statu
 docker-compose exec schemaregistry schema-exporter --get-status --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081 | jq
 ```
 
-This shows us that there has been a problem and the exporter has been placed in a `PAUSED` state'
+This shows us that there has been a problem and the exporter has been placed in a `PAUSED` state:
 
 ```json
 {
@@ -715,7 +723,8 @@ docker-compose exec schemaregistry2 schema-exporter --get-status --name tgt-to-s
 }
 ```
 
-So `tgt-to-src-link` is in a `RUNNING` state.  We can use `date -r` to find out the timestamp of the epoch - we will need to delete the last 3 digits to lower the precision from miliseconds to seconds:
+So `tgt-to-src-link` is in a `RUNNING` state.  
+We can use `date -r` to find out the timestamp of the epoch - we will need to delete the last 3 digits to lower the precision from miliseconds to seconds:
 
 ```bash
 date -r 1701290473
@@ -728,7 +737,7 @@ Back to the failing `schema-exporter`:
 Subject :.source.target:stock_trades-value is not in import mode;
 ```
 
-This seems to be a bug; look at how the context is being constructed within the exception - it's almost as if it's appending the `source` and `target` contexts together - and from our earlier tests, we know that's not what is happening (at least with respect to where the replicated Schemas are) but let's try to resolve this by setting this context into `import mode`:
+Now at this point, this seems to be a bug; look at how the context is being constructed within the exception - it's almost as if it's appending the `source` and `target` contexts together - and from our earlier tests, we know that's not what is happening (at least with respect to where the replicated Schemas are - we've checked the contexts on both sides and we've read the Schemas in all cases - but let's try to resolve this by setting this context into `import mode`:
 
 ### Set the `.source.target` Context into `IMPORT` mode
 
