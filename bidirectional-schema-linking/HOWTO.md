@@ -106,7 +106,7 @@ This confirms that the Schema is available:
 ["pageviews-value"]
 ```
 
-#### Demonstrate that the Schema is identical on both sides
+### Demonstrate that the Schema is identical on both sides
 
 ```bash
 curl http://localhost:8081/subjects/pageviews-value/versions/1 | md5
@@ -150,6 +150,12 @@ Important to note here that while we're retrieving the Schema from our second (`
 So that covers Schema Linking using the Default Context of the first Schema Registry and replicating that to the Default Context of the second Schema Registry.  
 
 Next we'll look at the Active/Active configuration - and you'll see why the Active/Passive architecture has some advantages through it's simplicity.
+
+To clean up everything and restart, run:
+
+```bash
+docker-compose down && docker container prune -f && docker-compose up -d
+```
 
 ## Schema Linking: Active/Active Setup (with specific subjects)
 
@@ -434,13 +440,11 @@ ZJZZT : {"side":"BUY","quantity":3357,"symbol":"ZJZZT","price":744,"account":"LM
 ZBZX : {"side":"SELL","quantity":700,"symbol":"ZBZX","price":412,"account":"XYZ789","userid":"User_9"}
 ```
 
-To clean up everything and restart, run:
+Finally, to clean up everything and restart, run:
 
 ```bash
 docker-compose down && docker container prune -f && docker-compose up -d
 ```
-
-(TODO - check ^^)
 
 ## Schema Linking: Active/Active Setup (with replicated Contexts)
 
@@ -448,23 +452,54 @@ Now we're going to do something a little different - rather than specifying indi
 
 We will start by creating the Cluster Links - note that we're not specifying subjects in either case this time:
 
+### DEBUG notes
+
+```bash
+curl --silent http://localhost:8082/subjects/stock_trades-value/versions/1 | jq
+curl --silent http://localhost:8081/subjects/stock_trades-value/versions/1 | jq
+```
+
+```bash
+curl --silent http://localhost:8081/subjects/pageviews-value/versions/1 | jq
+curl --silent http://localhost:8082/subjects/pageviews-value/versions/1 | jq
+```
+
+```
+[2023-11-28 23:27:54,421] ERROR Error during export: io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Subject :.target.source:pageviews-value is not in import mode; error code: 42205
+```
+
+
 ### Schema Exporter from Source to Target cluster
 
 ```bash
-docker-compose exec schemaregistry schema-exporter --create --name src-to-tgt-link \
+docker-compose exec schemaregistry schema-exporter --create \
+    --name src-to-tgt-link --subjects "*" \
     --config-file /tmp/config/schemalink-src.cfg \
     --schema.registry.url http://schemaregistry:8081 \
     --context-name source --context-type CUSTOM
 ```
 
+Describe it:
+
+```bash
+docker-compose exec schemaregistry schema-exporter --describe --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081 
+```
+
+// TODO --subjects ":*:" 
+
 ### Schema Exporter from Target to Source cluster
 
 ```bash
-docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-link \
+docker-compose exec schemaregistry2 schema-exporter --create \
+    --name tgt-to-src-link --subjects "*" \
     --config-file /tmp/config/schemalink-tgt.cfg \
     --schema.registry.url http://schemaregistry2:8082 \
     --context-name target --context-type CUSTOM
 ```
+
+docker-compose exec schemaregistry2 schema-exporter --describe --name tgt-to-src-link --schema.registry.url http://schemaregistry2:8082
+
+// --subjects "*"
 
 As with the previous run, you should see the following responses respectively:
 
@@ -473,24 +508,52 @@ Successfully created exporter src-to-tgt-link
 Successfully created exporter tgt-to-src-link
 ```
 
+### List the Schema Exporters
+
+Starting with the `source` Schema Registry instance:
+
+```bash
+docker-compose exec schemaregistry schema-exporter --list --schema.registry.url http://schemaregistry:8081
+```
+
+You should see:
+
+```bash
+[src-to-tgt-link]
+```
+
+And on the `target` Schema Registry instance:
+
+```bash
+docker-compose exec schemaregistry2 schema-exporter --list --schema.registry.url http://schemaregistry2:8082
+```
+
+You should see:
+
+```bash
+[tgt-to-src-link]
+```
+
 Before we can configure the Datagen connectors, we need to add a further step for this to work - we need to set our `source` and `target` Contexts (on the `target` and the `source` host respectively) into `IMPORT` mode; failure to do this will cause Connectors to fail to start.
 
 ### Set the `source` Context into `IMPORT` mode
 
 ```bash
-curl --silent -X PUT http://localhost:8082/mode/:.source: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
+curl --silent -X PUT "http://localhost:8082/mode/:.source:" -d "{\"mode\": \"IMPORT\"}" -H "Content-Type: application/json" | jq
 ```
 
 You should see the following JSON in the response:
 
 ```json
-{"mode":"IMPORT"}
+{
+  "mode": "IMPORT"
+}
 ```
 
 Let's confirm that the `.source` context has been set to `IMPORT` mode:
 
 ```bash
-curl --silent -X GET http://localhost:8082/mode/:.source: | jq
+curl --silent -X GET "http://localhost:8082/mode/:.source:" | jq
 ```
 
 And we should see this confirmed in the response:
@@ -501,10 +564,155 @@ And we should see this confirmed in the response:
 }
 ```
 
+### Set the `target` Context into `IMPORT` mode
+
+```bash
+curl --silent -X PUT "http://localhost:8081/mode/:.target:" -d "{\"mode\": \"IMPORT\"}" -H "Content-Type: application/json" | jq
+```
+
+You should see:
+
+```json
+{
+  "mode": "IMPORT"
+}
+```
+
+Let's confirm that the `.target` context has been set to `IMPORT` mode:
+
+```bash
+curl --silent -X GET "http://localhost:8081/mode/:.target:" | jq
+```
+
+The response should confirm this:
+
+```json
+{
+  "mode": "IMPORT"
+}
+```
+
+Okay - we're now ready to create our `Datagen` connectors.
+
+### Create `pageviews` Datagen on the Source
+
+```bash
+curl -i -X PUT http://localhost:8083/connectors/pageviews/config \
+     -H "Content-Type: application/json" \
+     -d '{
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "kafka.topic": "pageviews",
+            "quickstart": "pageviews",
+            "max.interval": 1000,
+            "iterations": 10000000,
+            "tasks.max": "1"
+        }'
+```
+
+If successful, the output response from this `curl` request should return an `HTTP 201` Status code:
+
+```bash
+HTTP/1.1 201 Created
+```
+
+### Create `stock_trades` Datagen on the Target
+
+```bash
+curl -i -X PUT http://localhost:8084/connectors/stock_trades/config \
+     -H "Content-Type: application/json" \
+     -d '{
+            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "kafka.topic": "stock_trades",
+            "quickstart": "stock_trades",
+            "max.interval": 1000,
+            "iterations": 10000000,
+            "tasks.max": "1"
+        }'
+```
+
+Again, the output response from this `curl` request should return an `HTTP 201` Status code:
+
+```bash
+HTTP/1.1 201 Created
+```
+
+From here, let's check Control Center to confirm that both Connectors are running and that the `pageviews` and the `stock_trades` topics are both receiving messages.
+
+### Subjects and Contexts in more detail
+
+Get schemas from all contexts (note we're using quotes to get around the globbing `*` characters):
+
+Using the `source` Schema Registry:
+
+```bash
+curl -X GET "http://localhost:8081/schemas?subjectPrefix=:*:"
+```
+
+Using the `target` Schema Registry:
+
+```bash
+curl -X GET "http://localhost:8082/schemas?subjectPrefix=:*:"
+```
+
+Get schemas from a given Schema Registry Context:
+
+```bash
+curl -X GET "http://localhost:8082/schemas?subjectPrefix=:.source:"
+```
+
+```bash
+curl -X GET "http://localhost:8081/schemas?subjectPrefix=:.target:"
+```
+
+**** *****
 
 
 
-curl -X GET http://localhost:8082/mode/:.source: | jq
+
+## Review our Contexts (TODO)
+
+```bash
+curl -X GET http://localhost:8081/contexts
+```
+curl -X GET http://localhost:8082/contexts
+
+
+### Schema Registry `subject` check
+
+Let's start by checking the Target cluster:
+
+```bash
+curl --silent http://localhost:8082/subjects/ | jq
+```
+
+We should see subjects created in the `Default` context and in the `.souce` context:
+
+```json
+[
+  ":.source:pageviews-value",
+  "stock_trades-value"
+]
+```
+
+And now let's check the Source cluster:
+
+```bash
+curl --silent http://localhost:8081/subjects/ | jq
+```
+
+```json
+[":.target:stock_trades-value","pageviews-value"]
+```
+
+
+
+
+
+
+
+
 
 
 
@@ -523,7 +731,7 @@ docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-l
     --context-type NONE
 ```
 
-
+curl -X GET http://localhost:8082/mode/:.source: | jq
 
 
 
@@ -570,9 +778,7 @@ docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-l
 
 Then
 
-```bash
-curl -X GET http://localhost:8081/contexts
-```
+
 curl --silent -X PUT http://localhost:8082/mode/:.source: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
 
 Confirm
@@ -589,25 +795,9 @@ You should see:
 
 docker-compose exec schemaregistry2 schema-exporter --list --schema.registry.url http://schemaregistry2:8082
 
-curl --silent -X PUT http://localhost:8081/mode/:.target: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
 
-curl --silent -X GET http://localhost:8081/mode/:.target:
 
-```bash
-curl http://localhost:8082/subjects/
-```
 
-```json
-[":.source:pageviews-value","stock_trades-value"]
-```
-
-```bash
-curl http://localhost:8081/subjects/
-```
-
-```json
-[":.target:stock_trades-value","pageviews-value"]
-```
 
 ❯ curl http://localhost:8081/subjects/pageviews-value/versions/1
 {"subject":"pageviews-value","version":1,"id":1,"schema":"{\"type\":\"record\",\"name\":\"pageviews\",\"namespace\":\"ksql\",\"fields\":[{\"name\":\"viewtime\",\"type\":\"long\"},{\"name\":\"userid\",\"type\":\"string\"},{\"name\":\"pageid\",\"type\":\"string\"}],\"connect.name\":\"ksql.pageviews\"}"}%
@@ -623,21 +813,7 @@ curl -X GET http://localhost:8081/config
 
 curl --silent -X PUT http://localhost:8082/mode/:.source: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
 
-Get schemas from all contexts:
 
-```bash
-curl -X GET http://localhost:8082/schemas?subjectPrefix=:*:
-```
-
-Get schemas from a given Schema Registry Context:
-
-```bash
-curl -X GET http://localhost:8082/schemas?subjectPrefix=:.source:
-```
-
-```bash
-curl -X GET http://localhost:8081/schemas?subjectPrefix=:.target:
-```
 
 
 
