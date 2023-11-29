@@ -500,11 +500,11 @@ From here, let's check Control Center to confirm that both Connectors are runnin
 
 ### Schema Linking (bi-directional)
 
-Next step will be to create our replica contexts by creating the Schema Exporters - note that we're not specifying subjects in either case this time.
+Next step will be to create our replica contexts by creating the Schema Exporters - note that we're not specifying subjects in either case this time when we create the Schema Exporter instances.
 
-### Schema Exporter from `Source` to `Target` cluster
+#### Configure Schema Exporter from `Source` to `Target` cluster
 
-TODO...
+We're going to set up the first of the two Schema Exporters - we're going to start with the `source` Schema Registry (listening on port 8081) and we're configuring the link there, creating a context called `source` which will reside on the `target` cluster.  So we're replicating the Schemas created on the source into a context on the target Schema Registry instance:
 
 ```bash
 docker-compose exec schemaregistry schema-exporter --create \
@@ -514,9 +514,9 @@ docker-compose exec schemaregistry schema-exporter --create \
     --context-name source --context-type CUSTOM
 ```
 
-### Schema Exporter from the `Target` to the `Source` Schema Registries
+#### Schema Exporter from the `Target` to the `Source` Schema Registries
 
-We should TODO...
+As this is bi-directional, again, we're setting up the Schema Exporter from the `target` Schema Registry (listening on port 8082).  The default context of the Schema Registry will be replicated to a context called `target`:
 
 ```bash
 docker-compose exec schemaregistry2 schema-exporter --create \
@@ -526,75 +526,104 @@ docker-compose exec schemaregistry2 schema-exporter --create \
     --context-name target --context-type CUSTOM
 ```
 
+### Check to ensure the schemas are being replicated
 
-
-
-
-
-
-
-
-
-### DEBUG notes
+We will start with the first Schema Registry:
 
 ```bash
-curl --silent http://localhost:8082/subjects/stock_trades-value/versions/1 | jq
-curl --silent http://localhost:8081/subjects/stock_trades-value/versions/1 | jq
+curl --silent http://localhost:8081/subjects/ | jq
+```
+
+What we should now see is the default context subject (`pageviews-value`) and we should also see the schema from the `target` context for the `stocktrades` Datagen connector:
+
+```json
+[
+  ":.target:stock_trades-value",
+  "pageviews-value"
+]
+```
+
+Let's now do the same with the second Schema Registry:
+
+```bash
+bash-5.2$ curl --silent http://localhost:8082/subjects/ | jq
+```
+
+And we should see the two subjects:
+
+```json
+[
+  ":.source:pageviews-value",
+  "stock_trades-value"
+]
+```
+
+### Subjects and Contexts in more detail
+
+You can use the Schema Registry HTTP API to get schemas from all contexts (note we're using quotes around the URL to get around the globbing `*` characters):
+
+Using the `source` Schema Registry:
+
+```bash
+curl --silent "http://localhost:8081/schemas?subjectPrefix=:*:" | jq
+```
+
+Using the `target` Schema Registry:
+
+```bash
+curl --silent "http://localhost:8082/schemas?subjectPrefix=:*:" | jq
+```
+
+Get schemas from a given Schema Registry Context: `.source`:
+
+```bash
+curl --silent "http://localhost:8082/schemas?subjectPrefix=:.source:" | jq
+```
+
+Get schemas from a given Schema Registry Context: `.target`:
+
+```bash
+curl --silent "http://localhost:8081/schemas?subjectPrefix=:.target:" | jq
+```
+
+### Describe `schema-exporter` instances
+
+If you start creating multiple exporters, it's useful to know
+
+```bash
+docker-compose exec schemaregistry schema-exporter --describe --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081 | jq
+```
+
+```json
+{
+  "name": "src-to-tgt-link",
+  "subjects": [
+    "*"
+  ],
+  "contextType": "CUSTOM",
+  "context": "source",
+  "config": {
+    "schema.registry.url": "http://schemaregistry2:8082"
+  }
+}
 ```
 
 ```bash
-curl --silent http://localhost:8081/subjects/pageviews-value/versions/1 | jq
-curl --silent http://localhost:8082/subjects/pageviews-value/versions/1 | jq
+docker-compose exec schemaregistry2 schema-exporter --describe --name tgt-to-src-link --schema.registry.url http://schemaregistry2:8082 | jq
 ```
 
-```
-[2023-11-28 23:27:54,421] ERROR Error during export: io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Subject :.target.source:pageviews-value is not in import mode; error code: 42205
-```
-
-v1
-
-```bash
-docker-compose exec schemaregistry schema-exporter --create \
-    --name src-to-tgt-link3 --subjects "*" \
-    --config-file /tmp/config/schemalink-src.cfg \
-    --schema.registry.url http://schemaregistry:8081 \
-    --context-name source3 --context-type CUSTOM
-```
-
-
-Describe it:
-
-```bash
-docker-compose exec schemaregistry schema-exporter --describe --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081 
-```
-
-// TODO --subjects ":*:" 
-See: https://docs.confluent.io/cloud/current/sr/schema-linking.html#configuration-options  
-
-
-
-v2
-```bash
-docker-compose exec schemaregistry2 schema-exporter --create \
-    --name tgt-to-src-link3 --subjects "*" \
-    --config-file /tmp/config/schemalink-tgt.cfg \
-    --schema.registry.url http://schemaregistry2:8082 \
-    --context-name target3 --context-type CUSTOM
-```
-
-curl --silent -X GET "http://localhost:8082/mode/:.source:pageviews-value" | jq
-
-
-// --subjects "*" 
-docker-compose exec schemaregistry2 schema-exporter --describe --name tgt-to-src-link --schema.registry.url http://schemaregistry2:8082
-
-// --subjects "*"
-
-As with the previous run, you should see the following responses respectively:
-
-```bash
-Successfully created exporter src-to-tgt-link
-Successfully created exporter tgt-to-src-link
+```json
+{
+  "name": "tgt-to-src-link",
+  "subjects": [
+    "*"
+  ],
+  "contextType": "CUSTOM",
+  "context": "target",
+  "config": {
+    "schema.registry.url": "http://schemaregistry:8081"
+  }
+}
 ```
 
 ### List the Schema Exporters
@@ -622,6 +651,193 @@ You should see:
 ```bash
 [tgt-to-src-link]
 ```
+
+### Schema Registry: Review configured Contexts
+
+The Schema Registry ReST API has a `/contexts` endpoint, which will give you a list of all the available contexts known to each Schema Registry instance:
+
+```bash
+curl --silent http://localhost:8081/contexts | jq
+```
+
+```json
+[
+  ".",
+  ".target"
+]
+```
+
+And:
+
+```bash
+curl --silent GET http://localhost:8082/contexts | jq
+```
+
+```json
+[
+  ".",
+  ".source"
+]
+```
+
+### Debugging Operations for `schema-exporter`
+
+You can get the status of your `schema-exporter` instance using the `--get-status` switch:
+
+```bash
+docker-compose exec schemaregistry schema-exporter --get-status --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081 | jq
+```
+
+This shows us that there has been a problem and the exporter has been placed in a `PAUSED` state'
+
+```json
+{
+  "name": "src-to-tgt-link",
+  "state": "PAUSED",
+  "offset": 4,
+  "ts": 1701292093264,
+  "trace": "io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Subject :.source.target:stock_trades-value is not in import mode; error code: 42205\n\tat io.confluent.kafka.schemaregistry.client.rest.RestService.sendHttpRequest(RestService.java:335)\n\tat io.confluent.kafka.schemaregistry.client.rest.RestService.httpRequest(RestService.java:408)\n\tat io.confluent.kafka.schemaregistry.client.rest.RestService.registerSchema(RestService.java:588)\n\tat io.confluent.kafka.schemaregistry.client.rest.RestService.registerSchema(RestService.java:576)\n\tat io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient.registerAndGetId(CachedSchemaRegistryClient.java:320)\n\tat io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient.registerWithResponse(CachedSchemaRegistryClient.java:426)\n\tat io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient.register(CachedSchemaRegistryClient.java:397)\n\tat io.confluent.schema.exporter.storage.AbstractSchemaExporterTask.lambda$registerSchema$5(AbstractSchemaExporterTask.java:393)\n\tat io.confluent.kafka.schemaregistry.rest.client.RetryExecutor.retry(RetryExecutor.java:36)\n\tat io.confluent.schema.exporter.storage.AbstractSchemaExporterTask.registerSchema(AbstractSchemaExporterTask.java:392)\n\tat io.confluent.schema.exporter.storage.AbstractSchemaExporterTask.exportSchema(AbstractSchemaExporterTask.java:379)\n\tat io.confluent.schema.exporter.storage.AbstractSchemaExporterTask.export(AbstractSchemaExporterTask.java:273)\n\tat io.confluent.schema.exporter.storage.SchemaExporterRunningTask.run(SchemaExporterRunningTask.java:93)\n\tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515)\n\tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)\n\tat io.confluent.schema.exporter.util.StripedExecutorService$SerialExecutor$1.run(StripedExecutorService.java:436)\n\tat java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)\n\tat java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)\n\tat java.base/java.lang.Thread.run(Thread.java:829)\n"
+}
+```
+
+We'll dig deeper into fixing this issue shortly, but before we do that, let's get the status of the other `schema-exporter` instance on the `target` cluster:
+
+```bash
+docker-compose exec schemaregistry2 schema-exporter --get-status --name tgt-to-src-link --schema.registry.url http://schemaregistry2:8082 | jq
+```
+
+```json
+{
+  "name": "tgt-to-src-link",
+  "state": "RUNNING",
+  "offset": 2,
+  "ts": 1701290473581
+}
+```
+
+So `tgt-to-src-link` is in a `RUNNING` state.  We can use `date -r` to find out the timestamp of the epoch - we will need to delete the last 3 digits to lower the precision from miliseconds to seconds:
+
+```bash
+date -r 1701290473
+Wed 29 Nov 2023 20:41:13 GMT
+```
+
+Back to the failing `schema-exporter`:
+
+```bash
+Subject :.source.target:stock_trades-value is not in import mode;
+```
+
+This seems to be a bug.. but let's try:
+
+### Set the `target` Context into `IMPORT` mode
+
+```bash
+curl --silent -X PUT "http://localhost:8081/mode/:.source.target:" -d "{\"mode\": \"IMPORT\"}" -H "Content-Type: application/json" | jq
+```
+
+docker-compose exec schemaregistry schema-exporter --restart --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081
+
+docker-compose exec schemaregistry schema-exporter --resume --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081
+Successfully resumed exporter src-to-tgt-link
+bash-5.2$ docker-compose exec schemaregistry schema-exporter --get-status --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081 | jq
+
+```json
+{
+  "name": "src-to-tgt-link",
+  "state": "RUNNING",
+  "offset": 4,
+  "ts": 1701292093264
+}
+```
+
+### Further Reading
+
+- <https://docs.confluent.io/cloud/current/sr/schema-linking.html#configuration-options>
+
+
+
+
+
+
+
+
+
+
+-------------------------------------
+
+```bash
+curl --silent -X PUT "http://localhost:8082/mode/:.source:" -d "{\"mode\": \"IMPORT\"}" -H "Content-Type: application/json" | jq
+```
+
+
+
+
+
+
+
+
+
+### DEBUG notes
+url --silent "http://localhost:8082/schemas?subjectPrefix='*'"
+
+```bash
+curl --silent http://localhost:8082/subjects/stock_trades-value/versions/1 | jq
+curl --silent http://localhost:8081/subjects/stock_trades-value/versions/1 | jq
+```
+
+```bash
+curl --silent http://localhost:8081/subjects/pageviews-value/versions/1 | jq
+curl --silent http://localhost:8082/subjects/pageviews-value/versions/1 | jq
+```
+
+```
+[2023-11-28 23:27:54,421] ERROR Error during export: io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Subject :.target.source:pageviews-value is not in import mode; error code: 42205
+```
+
+v1
+
+```bash
+docker-compose exec schemaregistry schema-exporter --create \
+    --name src-to-tgt-link3 --subjects "*" \
+    --config-file /tmp/config/schemalink-src.cfg \
+    --schema.registry.url http://schemaregistry:8081 \
+    --context-name source3 --context-type CUSTOM
+```
+
+
+
+
+// TODO --subjects ":*:" 
+See:   
+
+
+
+v2
+```bash
+docker-compose exec schemaregistry2 schema-exporter --create \
+    --name tgt-to-src-link3 --subjects "*" \
+    --config-file /tmp/config/schemalink-tgt.cfg \
+    --schema.registry.url http://schemaregistry2:8082 \
+    --context-name target3 --context-type CUSTOM
+```
+
+curl --silent -X GET "http://localhost:8082/mode/:.source:pageviews-value" | jq
+
+
+// --subjects "*" 
+
+
+// --subjects "*"
+
+As with the previous run, you should see the following responses respectively:
+
+```bash
+Successfully created exporter src-to-tgt-link
+Successfully created exporter tgt-to-src-link
+```
+
+
 
 Before we can configure the Datagen connectors, we need to add a further step for this to work - we need to set our `source` and `target` Contexts (on the `target` and the `source` host respectively) into `IMPORT` mode; failure to do this will cause Connectors to fail to start.
 
@@ -683,43 +899,14 @@ The response should confirm this:
 
 
 
-### Subjects and Contexts in more detail
 
-Get schemas from all contexts (note we're using quotes to get around the globbing `*` characters):
-
-Using the `source` Schema Registry:
-
-```bash
-curl -X GET "http://localhost:8081/schemas?subjectPrefix=:*:"
-```
-
-Using the `target` Schema Registry:
-
-```bash
-curl -X GET "http://localhost:8082/schemas?subjectPrefix=:*:"
-```
-
-Get schemas from a given Schema Registry Context:
-
-```bash
-curl -X GET "http://localhost:8082/schemas?subjectPrefix=:.source:"
-```
-
-```bash
-curl -X GET "http://localhost:8081/schemas?subjectPrefix=:.target:"
-```
 
 **** *****
 
 
 
 
-## Review our Contexts (TODO)
 
-```bash
-curl -X GET http://localhost:8081/contexts
-```
-curl -X GET http://localhost:8082/contexts
 
 
 ### Schema Registry `subject` check
@@ -819,6 +1006,7 @@ docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-l
 
 
 
+
 Then
 
 
@@ -863,56 +1051,13 @@ curl --silent -X PUT http://localhost:8082/mode/:.source: -d "{  \"mode\": \"IMP
 
 
 
-docker-compose exec schemaregistry schema-exporter --list --schema.registry.url http://schemaregistry:8081
-
-docker-compose exec schemaregistry2 schema-exporter --list --schema.registry.url http://schemaregistry2:8082
 
 
-docker-compose exec schemaregistry schema-exporter --get-status --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081
 
-docker-compose exec schemaregistry2 schema-exporter --get-status --name tgt-to-src-link --schema.registry.url http://schemaregistry2:8082
+
 
 curl http://localhost:8081/subjects/
 curl http://localhost:8082/subjects/
 
 curl http://localhost:8081/subjects/pageviews-value/versions/1
 curl http://localhost:8081/schemas/ids/1 | jq
-
-
-
-
-## Consume from topic using both SR instances
-
-
-
-## Create `pageviews` Datagen on Source
-
-```bash
-curl -i -X PUT http://localhost:8083/connectors/pageviews/config \
-     -H "Content-Type: application/json" \
-     -d '{
-            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
-            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-            "kafka.topic": "pageviews",
-            "quickstart": "pageviews",
-            "max.interval": 1000,
-            "iterations": 10000000,
-            "tasks.max": "1"
-        }'
-```
-
-## Create `stock_trades` Datagen on Target
-
-```bash
-curl -i -X PUT http://localhost:8084/connectors/stock_trades/config \
-     -H "Content-Type: application/json" \
-     -d '{
-            "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
-            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-            "kafka.topic": "stock_trades",
-            "quickstart": "stock_trades",
-            "max.interval": 1000,
-            "iterations": 10000000,
-            "tasks.max": "1"
-        }'
-```
