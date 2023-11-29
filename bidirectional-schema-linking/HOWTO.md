@@ -546,7 +546,7 @@ What we should now see is the default context subject (`pageviews-value`) and we
 Let's now do the same with the second Schema Registry:
 
 ```bash
-bash-5.2$ curl --silent http://localhost:8082/subjects/ | jq
+curl --silent http://localhost:8082/subjects/ | jq
 ```
 
 And we should see the two subjects:
@@ -728,19 +728,47 @@ Back to the failing `schema-exporter`:
 Subject :.source.target:stock_trades-value is not in import mode;
 ```
 
-This seems to be a bug.. but let's try:
+This seems to be a bug; look at how the context is being constructed within the exception - it's almost as if it's appending the `source` and `target` contexts together - and from our earlier tests, we know that's not what is happening (at least with respect to where the replicated Schemas are) but let's try to resolve this by setting this context into `import mode`:
 
-### Set the `target` Context into `IMPORT` mode
+### Set the `.source.target` Context into `IMPORT` mode
 
 ```bash
 curl --silent -X PUT "http://localhost:8081/mode/:.source.target:" -d "{\"mode\": \"IMPORT\"}" -H "Content-Type: application/json" | jq
 ```
 
-docker-compose exec schemaregistry schema-exporter --restart --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081
+Let's confirm that the `.source.target` context has been set to `IMPORT` mode:
 
+```bash
+curl --silent "http://localhost:8081/mode/:.source.target:" | jq
+```
+
+This will confirm that the mode is now correct:
+
+```json
+{
+  "mode": "IMPORT"
+}
+```
+
+### Resume the failed `schema-exporter`
+
+```bash
 docker-compose exec schemaregistry schema-exporter --resume --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081
+```
+
+As soon as that is run, you should see:
+
+```
 Successfully resumed exporter src-to-tgt-link
+```
+
+Let's get the status again:
+
+```bash
 bash-5.2$ docker-compose exec schemaregistry schema-exporter --get-status --name src-to-tgt-link --schema.registry.url http://schemaregistry:8081 | jq
+```
+
+And this confirms that the `schema-exporter` is runnning:
 
 ```json
 {
@@ -751,35 +779,7 @@ bash-5.2$ docker-compose exec schemaregistry schema-exporter --get-status --name
 }
 ```
 
-### Further Reading
-
-- <https://docs.confluent.io/cloud/current/sr/schema-linking.html#configuration-options>
-
-
-
-
-
-
-
-
-
-
--------------------------------------
-
-```bash
-curl --silent -X PUT "http://localhost:8082/mode/:.source:" -d "{\"mode\": \"IMPORT\"}" -H "Content-Type: application/json" | jq
-```
-
-
-
-
-
-
-
-
-
-### DEBUG notes
-url --silent "http://localhost:8082/schemas?subjectPrefix='*'"
+### Schema Checks from both Schema Registry instances
 
 ```bash
 curl --silent http://localhost:8082/subjects/stock_trades-value/versions/1 | jq
@@ -791,273 +791,32 @@ curl --silent http://localhost:8081/subjects/pageviews-value/versions/1 | jq
 curl --silent http://localhost:8082/subjects/pageviews-value/versions/1 | jq
 ```
 
-```
-[2023-11-28 23:27:54,421] ERROR Error during export: io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Subject :.target.source:pageviews-value is not in import mode; error code: 42205
-```
-
-v1
+You can also get the first Schema from each Schema Reigstry instance:
 
 ```bash
-docker-compose exec schemaregistry schema-exporter --create \
-    --name src-to-tgt-link3 --subjects "*" \
-    --config-file /tmp/config/schemalink-src.cfg \
-    --schema.registry.url http://schemaregistry:8081 \
-    --context-name source3 --context-type CUSTOM
+curl --silent http://localhost:8081/schemas/ids/1 | jq
+curl --silent http://localhost:8082/schemas/ids/1 | jq
 ```
 
-
-
-
-// TODO --subjects ":*:" 
-See:   
-
-
-
-v2
-```bash
-docker-compose exec schemaregistry2 schema-exporter --create \
-    --name tgt-to-src-link3 --subjects "*" \
-    --config-file /tmp/config/schemalink-tgt.cfg \
-    --schema.registry.url http://schemaregistry2:8082 \
-    --context-name target3 --context-type CUSTOM
-```
-
-curl --silent -X GET "http://localhost:8082/mode/:.source:pageviews-value" | jq
-
-
-// --subjects "*" 
-
-
-// --subjects "*"
-
-As with the previous run, you should see the following responses respectively:
+### Compatibility Level Check
 
 ```bash
-Successfully created exporter src-to-tgt-link
-Successfully created exporter tgt-to-src-link
+curl --silent http://localhost:8081/config | jq
 ```
-
-
-
-Before we can configure the Datagen connectors, we need to add a further step for this to work - we need to set our `source` and `target` Contexts (on the `target` and the `source` host respectively) into `IMPORT` mode; failure to do this will cause Connectors to fail to start.
-
-### Set the `source` Context into `IMPORT` mode
-
-```bash
-curl --silent -X PUT "http://localhost:8082/mode/:.source:" -d "{\"mode\": \"IMPORT\"}" -H "Content-Type: application/json" | jq
-```
-
-You should see the following JSON in the response:
 
 ```json
 {
-  "mode": "IMPORT"
+  "compatibilityLevel": "BACKWARD"
 }
 ```
 
-Let's confirm that the `.source` context has been set to `IMPORT` mode:
+### Connectivity
 
 ```bash
-curl --silent -X GET "http://localhost:8082/mode/:.source:" | jq
-```
-
-And we should see this confirmed in the response:
-
-```json
-{
-  "mode": "IMPORT"
-}
-```
-
-### Set the `target` Context into `IMPORT` mode
-
-```bash
-curl --silent -X PUT "http://localhost:8081/mode/:.target:" -d "{\"mode\": \"IMPORT\"}" -H "Content-Type: application/json" | jq
-```
-
-You should see:
-
-```json
-{
-  "mode": "IMPORT"
-}
-```
-
-Let's confirm that the `.target` context has been set to `IMPORT` mode:
-
-```bash
-curl --silent -X GET "http://localhost:8081/mode/:.target:" | jq
-```
-
-The response should confirm this:
-
-```json
-{
-  "mode": "IMPORT"
-}
-```
-
-
-
-
-
-**** *****
-
-
-
-
-
-
-
-### Schema Registry `subject` check
-
-Let's start by checking the Target cluster:
-
-```bash
-curl --silent http://localhost:8082/subjects/ | jq
-```
-
-We should see subjects created in the `Default` context and in the `.souce` context:
-
-```json
-[
-  ":.source:pageviews-value",
-  "stock_trades-value"
-]
-```
-
-And now let's check the Source cluster:
-
-```bash
-curl --silent http://localhost:8081/subjects/ | jq
-```
-
-```json
-[":.target:stock_trades-value","pageviews-value"]
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
----- NOTES BELOW
-
-### Configure Schema Exporter from Target to Source cluster
-
-```bash
-docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-link \
-    --config-file /tmp/config/schemalink-tgt.cfg \
-    --schema.registry.url http://schemaregistry2:8082 \
-    --context-type NONE
-```
-
-curl -X GET http://localhost:8082/mode/:.source: | jq
-
-
-
-
-
-## Bidirectional Cluster Linking walkthrough
-
-Schema Exporter from Source to Target cluster
-
-
-
-    curl --silent -X PUT http://localhost:8086/mode/:.left: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
-    # confirm change was applied
-    curl --silent -X GET http://localhost:8086/mode/:.left:
-
-curl --silent -X GET http://localhost:8081/mode/:.target:
-
-
-## This set works
-
-Schema Exporter from Source to Target cluster
-
-```bash
-docker-compose exec schemaregistry schema-exporter --create --name src-to-tgt-link \
-    --config-file /tmp/config/schemalink-src.cfg --subjects pageviews-value \
-    --schema.registry.url http://schemaregistry:8081
-```
-
-Schema Exporter from Target to Source cluster
-
-```bash
-docker-compose exec schemaregistry2 schema-exporter --create --name tgt-to-src-link \
-    --config-file /tmp/config/schemalink-tgt.cfg --subjects stock_trades-value \
-    --schema.registry.url http://schemaregistry2:8082
-```
-
-
-
-
-
-
-
-
-
-
-Then
-
-
-curl --silent -X PUT http://localhost:8082/mode/:.source: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
-
-Confirm
-
-curl --silent -X GET http://localhost:8082/mode/:.source:
-
-You should see:
-
-```json
-{"mode":"IMPORT"}
-```
-
-
-
-docker-compose exec schemaregistry2 schema-exporter --list --schema.registry.url http://schemaregistry2:8082
-
-
-
-
-
-❯ curl http://localhost:8081/subjects/pageviews-value/versions/1
-{"subject":"pageviews-value","version":1,"id":1,"schema":"{\"type\":\"record\",\"name\":\"pageviews\",\"namespace\":\"ksql\",\"fields\":[{\"name\":\"viewtime\",\"type\":\"long\"},{\"name\":\"userid\",\"type\":\"string\"},{\"name\":\"pageid\",\"type\":\"string\"}],\"connect.name\":\"ksql.pageviews\"}"}%
-
-❯ curl http://localhost:8082/subjects/pageviews-value/versions/1
-{"subject":":.source:pageviews-value","version":1,"id":1,"schema":"{\"type\":\"record\",\"name\":\"pageviews\",\"namespace\":\"ksql\",\"fields\":[{\"name\":\"viewtime\",\"type\":\"long\"},{\"name\":\"userid\",\"type\":\"string\"},{\"name\":\"pageid\",\"type\":\"string\"}],\"connect.name\":\"ksql.pageviews\"}"}%
-
 nc -zv localhost 8081
 telnet localhost 8081
-curl -X GET http://localhost:8081/config
+```
 
+### Further Reading
 
-
-curl --silent -X PUT http://localhost:8082/mode/:.source: -d "{  \"mode\": \"IMPORT\"}" -H "Content-Type: application/json"
-
-
-
-
-
-
-
-
-
-
-
-
-
-curl http://localhost:8081/subjects/
-curl http://localhost:8082/subjects/
-
-curl http://localhost:8081/subjects/pageviews-value/versions/1
-curl http://localhost:8081/schemas/ids/1 | jq
+- <https://docs.confluent.io/cloud/current/sr/schema-linking.html#configuration-options>
