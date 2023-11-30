@@ -830,6 +830,8 @@ nc -zv localhost 8081
 telnet localhost 8081
 ```
 
+## TODO: Demonstrate the evolution of schemas over *both* default contexts to show how a subject can evolve and failover!
+
 ### Further Reading
 
 - <https://docs.confluent.io/cloud/current/sr/schema-linking.html#configuration-options>
