@@ -72,3 +72,37 @@ services:
       KAFKA_CONFLUENT_METRICS_ENABLE: 'false'
       KAFKA_CONFLUENT_REPORTERS_TELEMETRY_AUTO_ENABLE: 'false'
       KAFKA_CONFLUENT_BALANCER_ENABLE: 'false'
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:${CP_TAG}
+    hostname: control-center
+    container_name: control-center
+    depends_on:
+      - zookeeper
+      - broker1
+      - broker2
+      - broker3
+      - schema-registry
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker1:9092'
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_STREAMS_NUM_STREAM_THREADS: "5"
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:${CP_TAG}
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - zookeeper
+      - broker1
+      - broker2
+      - broker3
+    ports:
+      - '8081:8081'
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker1:9092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
