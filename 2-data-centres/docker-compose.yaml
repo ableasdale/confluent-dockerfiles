@@ -1,0 +1,201 @@
+---
+version: '2'
+services:
+
+  broker-dc1:
+    image: confluentinc/cp-server:${CP_TAG}
+    hostname: broker-dc1
+    container_name: broker-dc1
+    ports:
+      - "9091:9091"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_JMX_PORT: 9991
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schema-registry-dc1:8081"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker-dc1:29091,PLAINTEXT_HOST://localhost:9091'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+      # Confluent Metrics Reporter for Control Center Cluster Monitoring
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-dc2:29092
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker-dc1:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://broker-dc1:29091,CONTROLLER://broker-dc1:29093,PLAINTEXT_HOST://0.0.0.0:9091'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      #KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      # Replace CLUSTER_ID with a unique base64 UUID using "bin/kafka-storage.sh random-uuid" 
+      # See https://docs.confluent.io/kafka/operations-tools/kafka-tools.html#kafka-storage-sh
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+
+  broker-dc2:
+    image: confluentinc/cp-server:${CP_TAG}
+    hostname: broker-dc2
+    container_name: broker-dc2
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_JMX_PORT: 9992
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schema-registry-dc2:8082"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker-dc2:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+      # Confluent Metrics Reporter for Control Center Cluster Monitoring
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker-dc2:29092
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker-dc2:29094'
+      KAFKA_LISTENERS: 'PLAINTEXT://broker-dc2:29092,CONTROLLER://broker-dc2:29094,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      #KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      # Replace CLUSTER_ID with a unique base64 UUID using "bin/kafka-storage.sh random-uuid" 
+      # See https://docs.confluent.io/kafka/operations-tools/kafka-tools.html#kafka-storage-sh
+      CLUSTER_ID: 'AaB3OEVBNTcwNTJENDM2Qk'
+
+  schema-registry-dc1:
+    image: confluentinc/cp-schema-registry:${CP_TAG}
+    hostname: schema-registry-dc1
+    container_name: schema-registry-dc1
+    restart: always
+    depends_on:
+      - broker-dc1
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry-dc1
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker-dc1:29091'
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
+      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: ERROR
+
+  schema-registry-dc2:
+    image: confluentinc/cp-schema-registry:${CP_TAG}
+    hostname: schema-registry-dc2
+    container_name: schema-registry-dc2
+    restart: always
+    depends_on:
+      - broker-dc1
+      - schema-registry-dc1
+    ports:
+      - "8082:8082"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry-dc2
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker-dc1:29091'
+      SCHEMA_REGISTRY_LEADER_ELIGIBILITY: "false"
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8082"
+      SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: ERROR
+
+  connect-dc2:
+    image: confluentinc/cp-enterprise-replicator:${CP_TAG}
+    hostname: connect-dc2
+    container_name: connect-dc2
+    depends_on:
+      - broker-dc1
+      - schema-registry-dc1
+      - broker-dc2
+      - schema-registry-dc2
+    ports:
+      - "8382:8382"
+      - "9892:9892"
+    command: "bash -c 'cp /usr/share/java/kafka-connect-replicator/replicator-rest-extension-*.jar /etc/kafka-connect/jars/; /etc/confluent/docker/run'"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'broker-dc2:29092'
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect-dc2
+      CONNECT_LISTENERS: http://connect-dc2:8382
+      CONNECT_GROUP_ID: "connect-dc2"
+      CONNECT_PRODUCER_CLIENT_ID: "connect-worker-producer-dc2"
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs-dc2
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets-dc2
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_TOPIC: connect-status-dc2
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_PLUGIN_PATH: /usr/share/java
+      CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+      # Confluent Monitoring Interceptors for Control Center Streams Monitoring
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_PRODUCER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: broker-dc2:29092
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CONNECT_CONSUMER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: broker-dc2:29092
+      CONNECT_REST_EXTENSION_CLASSES: io.confluent.connect.replicator.monitoring.ReplicatorMonitoringExtension
+      KAFKA_JMX_PORT: 9892
+      KAFKA_JMX_HOSTNAME: localhost
+
+  connect-dc1:
+    image: confluentinc/cp-enterprise-replicator:${CP_TAG}
+    hostname: connect-dc1
+    container_name: connect-dc1
+    depends_on:
+      - broker-dc1
+      - schema-registry-dc1
+      - broker-dc2
+      - schema-registry-dc2
+    ports:
+      - "8381:8381"
+      - "9891:9891"
+    command: "bash -c 'cp /usr/share/java/kafka-connect-replicator/replicator-rest-extension-*.jar /etc/kafka-connect/jars/; /etc/confluent/docker/run'"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'broker-dc1:29091'
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect-dc1
+      CONNECT_LISTENERS: http://connect-dc1:8381
+      CONNECT_GROUP_ID: "connect-dc1"
+      CONNECT_PRODUCER_CLIENT_ID: "connect-worker-producer-dc1"
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs-dc1
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets-dc1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_TOPIC: connect-status-dc1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_PLUGIN_PATH: /usr/share/java
+      CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+      # Confluent Monitoring Interceptors for Control Center Streams Monitoring
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_PRODUCER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: broker-dc2:29092
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CONNECT_CONSUMER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: broker-dc2:29092
+      CONNECT_REST_EXTENSION_CLASSES: io.confluent.connect.replicator.monitoring.ReplicatorMonitoringExtension
+      KAFKA_JMX_PORT: 9891
+      KAFKA_JMX_HOSTNAME: localhost
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:${CP_TAG}
+    hostname: control-center
+    container_name: control-center
+    depends_on:
+      - broker-dc2
+      - schema-registry-dc2
+      - connect-dc2
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker-dc2:29092'
+      CONTROL_CENTER_CONNECT_DC1_CLUSTER: http://connect-dc1:8381
+      CONTROL_CENTER_CONNECT_DC2_CLUSTER: http://connect-dc2:8382
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: http://schema-registry-dc2:8082
+      CONTROL_CENTER_KAFKA_DC1_BOOTSTRAP_SERVERS: 'broker-dc1:29091'
+      CONTROL_CENTER_KAFKA_DC2_BOOTSTRAP_SERVERS: 'broker-dc2:29092'
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONTROL_CENTER_DEPRECATED_VIEWS_ENABLE: "true"
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
