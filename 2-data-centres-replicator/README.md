@@ -4,10 +4,39 @@ The aim of this repository is to provide a very lightweight "2-data centre" proj
 
 The walkthrough in this README demonstrates creating some load on the broker in one DC and then configuring Replicator and subsequently tuning Replicator for better performance.
 
-## Getting started
+## Getting started
+
+The project will create the following infrastructure:
+
+- Confluent Control Center (`control-center`) which will be configured to allow you to manage and inspect both Data Centers.
+
+- Data Centre 1
+  - Schema Registry (`schema-registry-dc1`)
+  - Kafka Broker (`broker-dc1`)
+  - Connect Worker (`connect-dc1`)
+
+- Data Centre 2
+  - Schema Registry (`schema-registry-dc2`)
+  - Kafka Broker (`broker-dc2`)
+  - Connect Worker (`connect-dc2`)
+
+The brokers have been configured to run in KRaft mode, so there are no Zookeeper instances.
+
+> [!CAUTION]
+> Note that the instances are configured with `KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"`; this is because Replicator requires ACLs to be in place on topics when you're copying data between clusters.  This setting should never be used in production.
+
+In order to start the project, run the project in detached mode `-d`:
 
 ```bash
 docker-compose up -d
+```
+
+
+docker-compose exec broker-dc1 kafka-acls --list --bootstrap-server broker-dc1:29091 --topic replicate-me
+
+```bash
+
+docker logs broker-dc2
 ```
 
 ## Prerequisites
