@@ -33,7 +33,9 @@ In order to start the project, run the project in detached mode `-d`:
 docker-compose up -d
 ```
 
-### Run the First Test
+-------
+
+## Run the First Test
 
 We will start by creating the `first-test` topic for replication:
 
@@ -104,10 +106,33 @@ curl -X DELETE http://localhost:8381/connectors/replicator-dc1-to-dc2 | jq
 Let's start by tuning the Producer for the Replicator instance; we're going to add a few lines to give it some extra help:
 
 ```json
-
+    "producer.override.linger.ms":"100",
+    "producer.override.batch.size": "800000",
+    "producer.override.compression.type":"lz4",
+    "producer.override.acks":"all",
 ```
 
+Note that for producer acks, we're specifying `all`, which is the default for any clients later than Apache Kafka version 3.0; it's not necessary in this case, but we can add it for the sake of completion.
 
+Taken together, the above tuning settings provide what are normally considered to be the best options for getting the most out of your Producer:  
+
+<https://developer.confluent.io/tutorials/optimize-producer-throughput/confluent.html>
+
+We also need to configure the `override.policy` on the Connect Workers:
+
+```json
+    "connector.client.config.override.policy": "All",
+```
+
+Note that this is being done for you already for both Connect workers in the `docker-compose.yaml` file, so as soon as the `producer.override` settings are in place when the connector is created, the Connector settings will take precedence.
+
+See:
+- [How to override Producer and Consumer configurations for Source and Sink Connectors](https://support.confluent.io/hc/en-us/articles/21232790136340-How-to-override-Producer-and-Consumer-configurations-for-Source-and-Sink-Connectors)
+- [How to setup Kafka Connect to use their own dedicated cluster separate from the Replicator source and destination clusters](https://support.confluent.io/hc/en-us/articles/360040036692-How-to-setup-Kafka-Connect-to-use-their-own-dedicated-cluster-separate-from-the-Replicator-source-and-destination-clusters)
+
+
+
+-------
 
 curl -H "Content-Type: application/json" -X GET http://localhost:8381/connectors/
 ```
