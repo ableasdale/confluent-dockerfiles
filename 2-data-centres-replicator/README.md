@@ -99,6 +99,30 @@ You can tear down the replicator instance for the first test by running:
 curl -X DELETE http://localhost:8381/connectors/replicator-dc1-to-dc2 | jq
 ```
 
+Let's make sure our source topic is okay:
+
+```bash
+docker-compose exec broker-dc2 kafka-topics --describe --topic first-test --bootstrap-server broker-dc2:29092
+```
+
+Let's see where the Replicator Consumer offsets are at for that topic - this will give us an indication as to how many messages have been read:
+
+```bash
+docker-compose exec broker-dc1 kafka-consumer-groups --bootstrap-server broker-dc1:29091  --describe --group replicator-connector-first-test-consumer-group
+```
+
+We can review the messages using `kafka-console-consumer` on the second cluster (DC2):
+
+```bash
+docker-compose exec broker-dc2 kafka-console-consumer --bootstrap-server broker-dc2:29092 --from-beginning --topic first-test
+```
+
+If we cancel at the end, we would see:
+
+```bash
+Processed a total of 10000000 messages
+```
+
 -------
 
 ## Run the Second Test
@@ -182,7 +206,6 @@ docker-compose exec broker-dc2 kafka-topics --describe --topic replicate-me --bo
 ```
 
 
-
 ## Troubleshooting Tips
 
 Sometimes you need to just tear everything down and start again - as we're running the containers in detached mode, you can run the following to stop all associated containers and clean up - this should guarantee that everything is destroyed before you start your next run:
@@ -191,10 +214,22 @@ Sometimes you need to just tear everything down and start again - as we're runni
 docker-compose down && docker container prune -f
 ```
 
-Tail the connect worker logs
+Tail the connect worker logs for common issues:
 
 ```bash
 docker logs connect-dc1 --follow
+```
+
+Make sure the Connect Worker is available before creating the Connector instance; to do this, you can run:
+
+```bash
+watch -d curl localhost:8381
+```
+
+When the Worker is responsive, you should see something similar to:
+
+```json
+{"version":"7.6.0-ce","commit":"5d842885c76a15f7","kafka_cluster_id":"MkU3OEVBNTcwNTJENDM2Qg"}
 ```
 
 
@@ -256,3 +291,12 @@ org.apache.kafka.connect.errors.ConnectException: Could not obtain timely topic 
         at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
         at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
         at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+
+
+## replicate me test
+
+docker-compose exec broker-dc1 kafka-topics --create --bootstrap-server broker-dc1:29091 --topic replicate-me --replication-factor 1 --partitions 1
+
+./submit_replicator_dc1_to_dc2.sh
+
+docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 10000000 --topic replicate-me --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all

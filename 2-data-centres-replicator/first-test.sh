@@ -16,13 +16,22 @@ DATA=$( cat << EOF
     "dest.kafka.bootstrap.servers": "broker-dc2:29092",
 
     "topic.whitelist": "first-test",
+    "offset.translator.tasks.max": "0",
+    "offset.timestamps.commit": "false",
+    "offset.topic.commit": "true",
+    
     "key.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
     "value.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
     "header.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
 
     "confluent.topic.replication.factor": 1,
     "tasks.max": "1",
-    "topic.auto.create":"true"
+    "topic.auto.create":"true",
+    "consumer.override.bootstrap.servers": "broker-dc1:29091",
+    "producer.override.bootstrap.servers": "broker-dc2:29092",
+
+    "src.kafka.security.protocol": "PLAINTEXT", 
+    "dest.kafka.security.protocol": "PLAINTEXT"
   }
 }
 EOF

@@ -3,7 +3,7 @@
 HEADER="Content-Type: application/json"
 DATA=$( cat << EOF
 {
-  "name": "replicator-dc1-to-dc2",
+  "name": "replicator-dc1-to-dc2-first-test",
   "config": {
   
 
