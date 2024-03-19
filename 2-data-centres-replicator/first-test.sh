@@ -21,7 +21,7 @@ DATA=$( cat << EOF
     "header.converter": "io.confluent.connect.replicator.util.ByteArrayConverter",
 
     "confluent.topic.replication.factor": 1,
-    "tasks.max": "4",
+    "tasks.max": "1",
     "topic.auto.create":"true"
   }
 }

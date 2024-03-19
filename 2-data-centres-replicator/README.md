@@ -33,7 +33,7 @@ In order to start the project, run the project in detached mode `-d`:
 docker-compose up -d
 ```
 
-### First Test
+### Run the First Test
 
 We will start by creating the `first-test` topic for replication:
 
@@ -56,7 +56,7 @@ Let's create the Replicator instance:
 You should see:
 
 ```json
-{"name":"replicator-dc1-to-dc2-shiz","config":{"connector.class":"io.confluent.connect.replicator.ReplicatorSourceConnector","topic.whitelist":"replicate-me","key.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","value.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","src.kafka.bootstrap.servers":"broker-dc1:29091","src.consumer.group.id":"replicator-dc1-to-dc2-topic1","src.consumer.interceptor.classes":"io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor","src.consumer.confluent.monitoring.interceptor.bootstrap.servers":"broker-dc2:29092","src.kafka.timestamps.topic.replication.factor":"1","src.kafka.timestamps.producer.interceptor.classes":"io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor","src.kafka.timestamps.producer.confluent.monitoring.interceptor.bootstrap.servers":"broker-dc2:29092","dest.kafka.bootstrap.servers":"broker-dc2:29092","confluent.topic.replication.factor":"1","provenance.header.enable":"true","header.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","tasks.max":"1","topic.auto.create":"true","topic.rename.format":"xxxxxxxx..replicated","name":"replicator-dc1-to-dc2-shiz"},"tasks":[],"type":"source"}
+{"name":"replicator-dc1-to-dc2-first-test","config":{"connector.class":"io.confluent.connect.replicator.ReplicatorSourceConnector","src.consumer.interceptor.classes":"io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor","src.consumer.confluent.monitoring.interceptor.bootstrap.servers":"broker-dc2:29092","src.kafka.bootstrap.servers":"broker-dc1:29091","src.consumer.group.id":"replicator-connector-consumer-group","src.kafka.timestamps.topic.replication.factor":"1","dest.kafka.bootstrap.servers":"broker-dc2:29092","topic.whitelist":"first-test","key.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","value.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","header.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","confluent.topic.replication.factor":"1","tasks.max":"4","topic.auto.create":"true","name":"replicator-dc1-to-dc2-first-test"},"tasks":[],"type":"source"}
 ```
 
 To view a list of all Connectors using the Kafka Connect ReST API, run:
@@ -65,34 +65,39 @@ To view a list of all Connectors using the Kafka Connect ReST API, run:
 curl -H "Content-Type: application/json" -X GET http://localhost:8381/connectors/ | jq
 ```
 
-To view the Connector configuration:
+You should see:
 
-```bash
-curl -H "Content-Type: application/json" -X GET http://localhost:8381/connectors/replicator-dc1-to-dc2 | jq
+```json
+["replicator-dc1-to-dc2-first-test"]
 ```
 
+To view the Connector configuration (as JSON), you can run:
 
-If you navigate to Control Center <http://localhost:9021/>, select the dc1 tile, click on Replicators in the Navigation, you should be able to select the replicator instance to view the status of the connector:
+```bash
+curl -H "Content-Type: application/json" -X GET http://localhost:8381/connectors/replicator-dc1-to-dc2-first-test | jq
+```
+
+If you navigate to Control Center <http://localhost:9021/>, select the **dc1** tile to inspect the first Data Centre, click on **Replicators** in the Navigation, you should be able to select the replicator instance to view the status of the connector:
 
 ![Control Center Replicator Status](images/dc1-replicator-status.png "DC1 Replicator Status")
 
-Let's create some load:
+Now let's create some load using `kafka-producer-perf-test`:
 
 ```bash
-docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 10000000 --topic replicate-me --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all
+docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 10000000 --topic first-test --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all
 ```
-
-curl -H "Content-Type: application/json" -X GET http://localhost:8381/connectors/
 
 You can tear down the replicator instance for the first test by running:
 
 ```bash
-curl -X DELETE http://localhost:8083/connectors/replicator | jq
+curl -X DELETE http://localhost:8381/connectors/replicator-dc1-to-dc2 | jq
 ```
 
 
 -------
 
+
+curl -H "Content-Type: application/json" -X GET http://localhost:8381/connectors/
 ```
 
 docker-compose exec broker-dc1 kafka-acls --list --bootstrap-server broker-dc1:29091 --topic replicate-me
