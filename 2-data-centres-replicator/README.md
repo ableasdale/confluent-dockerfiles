@@ -35,16 +35,22 @@ docker-compose up -d
 
 ### First Test
 
-We will start by creating the `replicate-me` topic for replication:
+We will start by creating the `first-test` topic for replication:
 
 ```bash
-docker-compose exec broker-dc1 kafka-topics --bootstrap-server broker-dc1:29091 --topic replicate-me --replication-factor 1 --partitions 1 --create
+docker-compose exec broker-dc1 kafka-topics --create --bootstrap-server broker-dc1:29091 --topic first-test --replication-factor 1 --partitions 1
+```
+
+You should see:
+
+```bash
+Created topic first-test.
 ```
 
 Let's create the Replicator instance:
 
 ```bash
-./submit_replicator_dc1_to_dc2.sh
+./first-test.sh
 ```
 
 You should see:
@@ -53,6 +59,19 @@ You should see:
 {"name":"replicator-dc1-to-dc2-shiz","config":{"connector.class":"io.confluent.connect.replicator.ReplicatorSourceConnector","topic.whitelist":"replicate-me","key.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","value.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","src.kafka.bootstrap.servers":"broker-dc1:29091","src.consumer.group.id":"replicator-dc1-to-dc2-topic1","src.consumer.interceptor.classes":"io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor","src.consumer.confluent.monitoring.interceptor.bootstrap.servers":"broker-dc2:29092","src.kafka.timestamps.topic.replication.factor":"1","src.kafka.timestamps.producer.interceptor.classes":"io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor","src.kafka.timestamps.producer.confluent.monitoring.interceptor.bootstrap.servers":"broker-dc2:29092","dest.kafka.bootstrap.servers":"broker-dc2:29092","confluent.topic.replication.factor":"1","provenance.header.enable":"true","header.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","tasks.max":"1","topic.auto.create":"true","topic.rename.format":"xxxxxxxx..replicated","name":"replicator-dc1-to-dc2-shiz"},"tasks":[],"type":"source"}
 ```
 
+To view a list of all Connectors using the Kafka Connect ReST API, run:
+
+```bash
+curl -H "Content-Type: application/json" -X GET http://localhost:8381/connectors/ | jq
+```
+
+To view the Connector configuration:
+
+```bash
+curl -H "Content-Type: application/json" -X GET http://localhost:8381/connectors/replicator-dc1-to-dc2 | jq
+```
+
+
 If you navigate to Control Center <http://localhost:9021/>, select the dc1 tile, click on Replicators in the Navigation, you should be able to select the replicator instance to view the status of the connector:
 
 ![Control Center Replicator Status](images/dc1-replicator-status.png "DC1 Replicator Status")
@@ -60,7 +79,15 @@ If you navigate to Control Center <http://localhost:9021/>, select the dc1 tile,
 Let's create some load:
 
 ```bash
-docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 1000000 --topic replicate-me --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all
+docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 10000000 --topic replicate-me --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all
+```
+
+curl -H "Content-Type: application/json" -X GET http://localhost:8381/connectors/
+
+You can tear down the replicator instance for the first test by running:
+
+```bash
+curl -X DELETE http://localhost:8083/connectors/replicator | jq
 ```
 
 
@@ -78,26 +105,22 @@ docker logs broker-dc2
 ## Prerequisites
 
 
-You should see:
 
-```bash
-Created topic replicate-me.
-```
 
 Create some sample data:
 
 
 
 
-
+```bash
 docker-compose exec broker-dc2 kafka-topics --list --bootstrap-server broker-dc2:29092
 docker-compose exec broker-dc2 kafka-topics --describe --bootstrap-server broker-dc2:29092
 docker-compose exec broker-dc2 kafka-topics --describe --topic replicate-me --bootstrap-server broker-dc2:29092
+```
 
 
 
-
-Troubleshootinh
+### Troubleshooting
 
 waiting for replication to catch up.  Please check replication lag
 
