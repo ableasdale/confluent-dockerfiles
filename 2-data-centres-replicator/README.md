@@ -103,7 +103,7 @@ curl -X DELETE http://localhost:8381/connectors/replicator-dc1-to-dc2 | jq
 
 ## Run the Second Test
 
-Let's start by tuning the **Producer** for the Replicator instance; we're going to add a few lines to give it some extra help:
+Let's start by tuning the **Producer** for the Replicator instance; we're going to add a few lines to the connector JSON to give it some extra help:
 
 ```json
     "producer.override.linger.ms":"100",
@@ -112,7 +112,7 @@ Let's start by tuning the **Producer** for the Replicator instance; we're going 
     "producer.override.acks":"all",
 ```
 
-Note that for producer acks, we're specifying `all`, which is the default for any clients later than Apache Kafka version 3.0; it's not necessary in this case, but we can add it for the sake of completion.
+Note that for Producer acks, we're specifying `all`, which is the default for any clients later than Apache Kafka version 3.0; it's not necessary in this case, but we can add it for the sake of completion.
 
 Taken together, the above tuning settings provide what are normally considered to be the best options for getting the most out of your Producer:  
 
@@ -140,6 +140,16 @@ Create our Replicator instance:
 
 ```bash
 ./second-test.sh
+```
+
+And load some test data:
+
+```bash
+docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 10000000 --topic second-test --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all
+```
+
+
+```bash
 ```
 
 -------
@@ -181,7 +191,20 @@ Sometimes you need to just tear everything down and start again - as we're runni
 docker-compose down && docker container prune -f
 ```
 
+Tail the connect worker logs
 
+```bash
+docker logs connect-dc1 --follow
+```
+
+
+
+
+```bash
+
+```
+
+[2024-03-19 20:27:08,058] WARN Could not find offset for group replicator-connector-consumer-group, topic second-test, partition 0, timestamp 1710880002885, waiting for replication to catch up.  Please check replication lag. (io.confluent.connect.replicator.offsets.ConsumerOffsetsTranslator)
 
 waiting for replication to catch up.  Please check replication lag
 
@@ -190,9 +213,7 @@ CRIBE ACLs. Please make sure that the topics are allowed to DESCRIBE in ACLs
 [2024-03-19 12:46:53,159] ERROR WorkerConnector{id=replicator-dc1-to-dc2} Connector raised an error (org.apache.kafka.connect.runtime.WorkerConnector)
 org.apache.kafka.common.errors.InvalidConfigurationException: topic.whitelist contains topics: [replicate-me] but these are either not present in the source cluster or are missing DESCRIBE ACLs. Please make sure that the topics are allowed to DESCRIBE in ACLs
 
-```bash
-docker logs connect-dc1 --follow
-```
+
 
 ```bash
 docker-compose exec broker-dc1 kafka-acls --list --bootstrap-server broker-dc1:29091 --topic replicate-me
