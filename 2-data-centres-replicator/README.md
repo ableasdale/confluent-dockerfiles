@@ -103,7 +103,7 @@ curl -X DELETE http://localhost:8381/connectors/replicator-dc1-to-dc2 | jq
 
 ## Run the Second Test
 
-Let's start by tuning the Producer for the Replicator instance; we're going to add a few lines to give it some extra help:
+Let's start by tuning the **Producer** for the Replicator instance; we're going to add a few lines to give it some extra help:
 
 ```json
     "producer.override.linger.ms":"100",
@@ -118,7 +118,7 @@ Taken together, the above tuning settings provide what are normally considered t
 
 <https://developer.confluent.io/tutorials/optimize-producer-throughput/confluent.html>
 
-We also need to configure the `override.policy` on the Connect Workers:
+We also need to configure the `override.policy` on the **Connect Workers**:
 
 ```json
     "connector.client.config.override.policy": "All",
@@ -126,11 +126,21 @@ We also need to configure the `override.policy` on the Connect Workers:
 
 Note that this is being done for you already for both Connect workers in the `docker-compose.yaml` file, so as soon as the `producer.override` settings are in place when the connector is created, the Connector settings will take precedence.
 
-See:
+To learn more, see the following support Knowledgebase articles:
 - [How to override Producer and Consumer configurations for Source and Sink Connectors](https://support.confluent.io/hc/en-us/articles/21232790136340-How-to-override-Producer-and-Consumer-configurations-for-Source-and-Sink-Connectors)
 - [How to setup Kafka Connect to use their own dedicated cluster separate from the Replicator source and destination clusters](https://support.confluent.io/hc/en-us/articles/360040036692-How-to-setup-Kafka-Connect-to-use-their-own-dedicated-cluster-separate-from-the-Replicator-source-and-destination-clusters)
 
+As with prior runs, we'll start by creating our topic:
 
+```bash
+docker-compose exec broker-dc1 kafka-topics --create --bootstrap-server broker-dc1:29091 --topic second-test --replication-factor 1 --partitions 1
+```
+
+Create our Replicator instance:
+
+```bash
+./second-test.sh
+```
 
 -------
 
@@ -163,13 +173,15 @@ docker-compose exec broker-dc2 kafka-topics --describe --topic replicate-me --bo
 
 
 
-## Troubleshooting
+## Troubleshooting Tips
 
-Sometimes you need to just tear everything down and start again - as we're running the containers in detached mode, you can run the following to stop all associated containers and clean up:
+Sometimes you need to just tear everything down and start again - as we're running the containers in detached mode, you can run the following to stop all associated containers and clean up - this should guarantee that everything is destroyed before you start your next run:
 
 ```bash
 docker-compose down && docker container prune -f
 ```
+
+
 
 waiting for replication to catch up.  Please check replication lag
 

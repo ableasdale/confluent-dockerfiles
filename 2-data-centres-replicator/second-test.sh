@@ -3,7 +3,7 @@
 HEADER="Content-Type: application/json"
 DATA=$( cat << EOF
 {
-  "name": "replicator-dc1-to-dc2-first-test",
+  "name": "replicator-dc1-to-dc2-second-test",
   "config": {
     "connector.class": "io.confluent.connect.replicator.ReplicatorSourceConnector",
     
@@ -15,7 +15,7 @@ DATA=$( cat << EOF
     "src.consumer.interceptor.classes": "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor",
     "src.consumer.confluent.monitoring.interceptor.bootstrap.servers": "broker-dc2:29092",
     "src.kafka.bootstrap.servers": "broker-dc1:29091",
-    "src.consumer.group.id": "replicator-connector-consumer-group",
+    "src.consumer.group.id": "replicator-connector-second-test-consumer-group",
     "src.kafka.timestamps.topic.replication.factor": 1,
     
     "dest.kafka.bootstrap.servers": "broker-dc2:29092",
