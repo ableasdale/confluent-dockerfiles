@@ -1,8 +1,8 @@
-# 2 Data Centres
+# 2 Data Centres with Replicator
 
 The aim of this repository is to provide a very lightweight "2-data centre" project for simple performance testing and demoing Replicator.  It's configured to be lightweight so it can be run locally whilst also screensharing over a call.
 
-The walkthrough in this README demonstrates creating some load on the broker in one DC and then configuring Replicator and subsequently tuning Replicator for better performance.
+The walkthrough in this README demonstrates creating some load on the broker in one DC and then configuring Replicator and subsequently tuning Replicator for better performance over a number of test scenarios.
 
 ## Getting started
 
@@ -20,7 +20,9 @@ The project will create the following infrastructure:
   - Kafka Broker (`broker-dc2`)
   - Connect Worker (`connect-dc2`)
 
-The brokers have been configured to run in KRaft mode, so there are no Zookeeper instances.
+The brokers have been configured to run in KRaft mode, so there are no Zookeeper instances in use.  
+
+The project has been configured to use Confluent Platform 7.6.0
 
 > [!CAUTION]
 > Note that the instances are configured with `KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"`; this is because Replicator requires ACLs to be in place on topics when you're copying data between clusters.  This setting should never be used in production.
@@ -31,15 +33,7 @@ In order to start the project, run the project in detached mode `-d`:
 docker-compose up -d
 ```
 
-
-docker-compose exec broker-dc1 kafka-acls --list --bootstrap-server broker-dc1:29091 --topic replicate-me
-
-```bash
-
-docker logs broker-dc2
-```
-
-## Prerequisites
+### First Test
 
 We will start by creating the `replicate-me` topic for replication:
 
@@ -47,19 +41,7 @@ We will start by creating the `replicate-me` topic for replication:
 docker-compose exec broker-dc1 kafka-topics --bootstrap-server broker-dc1:29091 --topic replicate-me --replication-factor 1 --partitions 1 --create
 ```
 
-You should see:
-
-```bash
-Created topic replicate-me.
-```
-
-Create some sample data:
-
-```bash
-docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 1000000 --topic replicate-me --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all
-```
-
-Create the Replicator instance:
+Let's create the Replicator instance:
 
 ```bash
 ./submit_replicator_dc1_to_dc2.sh
@@ -70,6 +52,43 @@ You should see:
 ```json
 {"name":"replicator-dc1-to-dc2-shiz","config":{"connector.class":"io.confluent.connect.replicator.ReplicatorSourceConnector","topic.whitelist":"replicate-me","key.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","value.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","src.kafka.bootstrap.servers":"broker-dc1:29091","src.consumer.group.id":"replicator-dc1-to-dc2-topic1","src.consumer.interceptor.classes":"io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor","src.consumer.confluent.monitoring.interceptor.bootstrap.servers":"broker-dc2:29092","src.kafka.timestamps.topic.replication.factor":"1","src.kafka.timestamps.producer.interceptor.classes":"io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor","src.kafka.timestamps.producer.confluent.monitoring.interceptor.bootstrap.servers":"broker-dc2:29092","dest.kafka.bootstrap.servers":"broker-dc2:29092","confluent.topic.replication.factor":"1","provenance.header.enable":"true","header.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","tasks.max":"1","topic.auto.create":"true","topic.rename.format":"xxxxxxxx..replicated","name":"replicator-dc1-to-dc2-shiz"},"tasks":[],"type":"source"}
 ```
+
+If you navigate to Control Center <http://localhost:9021/>, select the dc1 tile, click on Replicators in the Navigation, you should be able to select the replicator instance to view the status of the connector:
+
+![Control Center Replicator Status](images/dc1-replicator-status.png "DC1 Replicator Status")
+
+Let's create some load:
+
+```bash
+docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 1000000 --topic replicate-me --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all
+```
+
+
+-------
+
+```
+
+docker-compose exec broker-dc1 kafka-acls --list --bootstrap-server broker-dc1:29091 --topic replicate-me
+
+```bash
+
+docker logs broker-dc2
+```
+
+## Prerequisites
+
+
+You should see:
+
+```bash
+Created topic replicate-me.
+```
+
+Create some sample data:
+
+
+
+
 
 docker-compose exec broker-dc2 kafka-topics --list --bootstrap-server broker-dc2:29092
 docker-compose exec broker-dc2 kafka-topics --describe --bootstrap-server broker-dc2:29092
