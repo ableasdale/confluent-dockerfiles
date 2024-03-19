@@ -56,7 +56,7 @@ Let's create the Replicator instance:
 You should see:
 
 ```json
-{"name":"replicator-dc1-to-dc2-first-test","config":{"connector.class":"io.confluent.connect.replicator.ReplicatorSourceConnector","src.consumer.interceptor.classes":"io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor","src.consumer.confluent.monitoring.interceptor.bootstrap.servers":"broker-dc2:29092","src.kafka.bootstrap.servers":"broker-dc1:29091","src.consumer.group.id":"replicator-connector-consumer-group","src.kafka.timestamps.topic.replication.factor":"1","dest.kafka.bootstrap.servers":"broker-dc2:29092","topic.whitelist":"first-test","key.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","value.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","header.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","confluent.topic.replication.factor":"1","tasks.max":"4","topic.auto.create":"true","name":"replicator-dc1-to-dc2-first-test"},"tasks":[],"type":"source"}
+{"name":"replicator-dc1-to-dc2-first-test","config":{"connector.class":"io.confluent.connect.replicator.ReplicatorSourceConnector","src.consumer.interceptor.classes":"io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor","src.consumer.confluent.monitoring.interceptor.bootstrap.servers":"broker-dc2:29092","src.kafka.bootstrap.servers":"broker-dc1:29091","src.consumer.group.id":"replicator-connector-consumer-group","src.kafka.timestamps.topic.replication.factor":"1","dest.kafka.bootstrap.servers":"broker-dc2:29092","topic.whitelist":"first-test","key.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","value.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","header.converter":"io.confluent.connect.replicator.util.ByteArrayConverter","confluent.topic.replication.factor":"1","tasks.max":"1","topic.auto.create":"true","name":"replicator-dc1-to-dc2-first-test"},"tasks":[],"type":"source"}
 ```
 
 To view a list of all Connectors using the Kafka Connect ReST API, run:
@@ -81,11 +81,15 @@ If you navigate to Control Center <http://localhost:9021/>, select the **dc1** t
 
 ![Control Center Replicator Status](images/dc1-replicator-status.png "DC1 Replicator Status")
 
-Now let's create some load using `kafka-producer-perf-test`:
+Now let's create some load using `kafka-producer-perf-test`; this will create 10 million small records that need to be replicated:
 
 ```bash
 docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 10000000 --topic first-test --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all
 ```
+
+Click on the Throughput tile and you'll see the latency metrics for the Connector:
+
+![Control Center Replicator Throughput](images/throughput-dc1.png "DC1 Replicator Throughput")
 
 You can tear down the replicator instance for the first test by running:
 
@@ -93,8 +97,16 @@ You can tear down the replicator instance for the first test by running:
 curl -X DELETE http://localhost:8381/connectors/replicator-dc1-to-dc2 | jq
 ```
 
-
 -------
+
+## Run the Second Test
+
+Let's start by tuning the Producer for the Replicator instance; we're going to add a few lines to give it some extra help:
+
+```json
+
+```
+
 
 
 curl -H "Content-Type: application/json" -X GET http://localhost:8381/connectors/
@@ -111,6 +123,7 @@ docker logs broker-dc2
 
 
 
+--throughput -1
 
 Create some sample data:
 
@@ -125,7 +138,13 @@ docker-compose exec broker-dc2 kafka-topics --describe --topic replicate-me --bo
 
 
 
-### Troubleshooting
+## Troubleshooting
+
+Sometimes you need to just tear everything down and start again - as we're running the containers in detached mode, you can run the following to stop all associated containers and clean up:
+
+```bash
+docker-compose down && docker container prune -f
+```
 
 waiting for replication to catch up.  Please check replication lag
 
