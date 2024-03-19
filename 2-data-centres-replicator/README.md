@@ -172,11 +172,65 @@ And load some test data:
 docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 10000000 --topic second-test --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all
 ```
 
+-------
+
+## Run the Third Test
+
+Okay, next thing to do is to tune the Replicator Consumer:
+
+```json
+          "src.consumer.fetch.min.bytes": "800000",
+          "src.consumer.fetch.max.wait.ms": "500",
+          "src.consumer.max.partition.fetch.bytes": "10485760"
+```
+
+Next, creating our topic:
 
 ```bash
+docker-compose exec broker-dc1 kafka-topics --create --bootstrap-server broker-dc1:29091 --topic third-test --replication-factor 1 --partitions 1
+```
+
+Create our Replicator instance:
+
+```bash
+./third-test.sh
+```
+
+And load some test data:
+
+```bash
+docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 10000000 --topic third-test --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all
 ```
 
 -------
+
+## Run the Fourth Test
+
+We're going to optimise the original Producer now - if we can tweak the throughput for the Producer writing the data to the source topic, we should see further performance gains.
+
+We're creating our fourth topic:
+
+```bash
+docker-compose exec broker-dc1 kafka-topics --create --bootstrap-server broker-dc1:29091 --topic fourth-test --replication-factor 1 --partitions 1
+```
+
+Create our Replicator instance:
+
+```bash
+./fourth-test.sh
+```
+
+And load some test data:
+
+```bash
+docker-compose exec broker-dc1 kafka-producer-perf-test --throughput -1 --num-records 10000000 --topic fourth-test --record-size 10 --producer-props bootstrap.servers='broker-dc1:29091' acks=all linger.ms=100 batch.size=300000 compression.type=lz4
+```
+
+
+```bash
+
+```
+
 
 curl -H "Content-Type: application/json" -X GET http://localhost:8381/connectors/
 ```
