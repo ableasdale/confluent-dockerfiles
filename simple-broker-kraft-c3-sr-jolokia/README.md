@@ -16,6 +16,10 @@ jconsole
 
 ### Jolokia
 
+- http://localhost:8778/jolokia/list
+- http://localhost:8778/jolokia/read/java.lang:type=Runtime/Name
+- 
+
 ```bash
 curl -s localhost:8778/jolokia/list | python3 -m json.tool
 ```
