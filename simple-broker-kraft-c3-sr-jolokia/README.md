@@ -95,13 +95,45 @@ $>get Value
 Value = 1;
 ```
 
+When you're finished, you can exit the JMXTerm session by running:
+
+```terminal
+$>exit
+#bye
+```
+
+And you can exit the shell session on the `broker` instance by running `exit` again at the prompt:
+
+```terminal
+[appuser@broker ~]$ exit
+exit
+```
+
+
 ## JConsole
+
+JMXTerm is great - but that's a lot of typing!  It might make sense to look at `JConsole` next, let's start it (note that you don't need to be in a shell session in the container for this):
 
 ```bash
 jconsole
 ```
 
+This will open a GUI Tool to allow you to view the JMX Metrics in a tree view.  
+
+To connect, you need two values from the `docker-compose.yaml` file:
+
+```properties
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+```
+
+To establish the JMX connection, select the **Remote Process** option and enter `localhost:9101` into the input field:
+
 ![Connect to JMX](jconsole.png)
+
+There will be a warning about not being able to connect using TLS (SSL), let's ignore this for now and specify that we're fine to establish an insecure connection.
+
+Along the top, you should see a tab called **MBeans**, select this and all the JMX Domains should be listed in a folder view on the left-hand panel.  From there, you can dig into any particular JMX Metric as necessary:
 
 ![View MBean](mbean.png)
 
