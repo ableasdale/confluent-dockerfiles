@@ -156,5 +156,10 @@ And of course, you can use a tool like `cURL` to gather those metrics too:
 curl -s localhost:8778/jolokia/list | python3 -m json.tool
 ```
 
+## JMXTool
+
+
+
+
 ### Notes below
 export KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
