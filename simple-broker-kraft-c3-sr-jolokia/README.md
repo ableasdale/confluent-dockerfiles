@@ -95,6 +95,14 @@ $>get Value
 Value = 1;
 ```
 
+Here's another example that uses the `-d` (domain) and `-b` (bean) switches:
+
+```terminal
+$>get -d rest-utils -b type=jersey-metrics  request-total
+#mbean = rest-utils:type=jersey-metrics:
+request-total = 0.0;
+```
+
 When you're finished, you can exit the JMXTerm session by running:
 
 ```terminal
@@ -158,8 +166,127 @@ curl -s localhost:8778/jolokia/list | python3 -m json.tool
 
 ## JMXTool
 
+We have to run this directly on the broker:
 
+```bash
+docker exec -it broker /bin/bash
+```
 
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=KafkaRequestHandlerPool,name=RequestHandlerAvgIdlePercent \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 > filename.csv
+```
+
+You should see:
+
+```bash
+Trying to connect to JMX url: service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi
+```
+
+After JMXTool has run for a while, you should see some output in your csv file:
+
+```csv
+1715338651075,25329887207625,percent,1.9993699989996927,1.9996093560199015,1.9990898175825642,2.0009824284484403,NANOSECONDS
+1715338652075,25331862709017,percent,1.9993699989996927,1.9996093560199015,1.9990879928187326,2.0009824284484403,NANOSECONDS
+```
+
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=FetcherLagMetrics,name=ConsumerLag,clientId=([-.\w]+),topic=([-.\w]+),partition=([0-9]+) \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 
+```
+#### BytesInPerSec
+
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 
+```
+#### BytesInPerSec - FifteenMinuteRate
+
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec --attributes Count,FifteenMinuteRate \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 
+```
+
+#### MessagesInPerSec
+
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec --object-name kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 
+```
+
+#### MessagesInPerSec - FifteenMinuteRate
+
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec --object-name kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec --attributes Count,FifteenMinuteRate \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 
+```
+
+#### Wildcard - kafka.server: all metrics
+
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec --object-name kafka.serve?:* \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 
+```
+#### Wildcard - kafka.server: all metrics - FifteenMinuteRate
+
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec --object-name kafka.serve?:* --attributes Count,FifteenMinuteRate \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 
+```
+
+#### Multiple Wildcards - kafka.*:* - FifteenMinuteRate
+
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec --object-name kafka.*:* --attributes Count,FifteenMinuteRate \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 
+```
+#### Property List Wildcard - FifteenMinuteRate
+
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec --object-name kafka.server:type=BrokerTopicMetrics,* --attributes Count,FifteenMinuteRate \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 
+```
+
+#### Property Value Wildcard - FifteenMinuteRate
+
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec --object-name kafka.server:type=BrokerTopicMetrics,name=*InPerSec --attributes Count,FifteenMinuteRate \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 
+```
+
+#### Wildcard on Lists and Properties - FifteenMinuteRate
+
+```bash
+kafka-run-class org.apache.kafka.tools.JmxTool  \
+  --object-name kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec --object-name kafka.server:type=*,* --attributes Count,FifteenMinuteRate \
+  --jmx-url service:jmx:rmi:///jndi/rmi://broker:9101/jmxrmi \
+  --reporting-interval 1000 
+```
 
 ### Notes below
+
+```
 export KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+```
