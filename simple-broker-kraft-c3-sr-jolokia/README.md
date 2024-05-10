@@ -109,7 +109,6 @@ And you can exit the shell session on the `broker` instance by running `exit` ag
 exit
 ```
 
-
 ## JConsole
 
 JMXTerm is great - but that's a lot of typing!  It might make sense to look at `JConsole` next, let's start it (note that you don't need to be in a shell session in the container for this):
@@ -139,9 +138,19 @@ Along the top, you should see a tab called **MBeans**, select this and all the J
 
 ### Jolokia
 
+Jolokia is available on port 8778 and it's a ReST API, so you can ask it to `/list` and `/read` values for you:
+
 - http://localhost:8778/jolokia/list
 - http://localhost:8778/jolokia/read/java.lang:type=Runtime/Name
-- 
+- http://localhost:8778/jolokia/read/kafka.controller:name=ActiveBrokerCount,type=KafkaController
+
+Example Jolokia output for `ActiveBrokerCount` (returned as JSON):
+
+```json
+{"request":{"mbean":"kafka.controller:name=ActiveBrokerCount,type=KafkaController","type":"read"},"value":{"Value":1},"status":200,"timestamp":1715327704}
+```
+
+And of course, you can use a tool like `cURL` to gather those metrics too:
 
 ```bash
 curl -s localhost:8778/jolokia/list | python3 -m json.tool
