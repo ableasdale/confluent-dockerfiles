@@ -12,6 +12,7 @@ services:
       - "8778:8778"
     volumes:
       - ./jolokia-agent:/usr/share/jolokia-agent
+      - ./jmx-term:/usr/share/jmx-term
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
@@ -42,7 +43,8 @@ services:
       KAFKA_CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
       KAFKA_CONFLUENT_METRICS_REPORTER_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_CONFLUENT_METRICS_ENABLE: 'true'
-      # Jolokia
+
+      # Jolokia Agent
       EXTRA_ARGS: -javaagent:/usr/share/jolokia-agent/jolokia-agent-jvm-2.0.0-javaagent.jar=port=8778,host=0.0.0.0
 
   control-center:
