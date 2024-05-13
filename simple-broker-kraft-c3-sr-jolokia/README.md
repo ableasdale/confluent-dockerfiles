@@ -152,6 +152,9 @@ Jolokia is available on port 8778 and it's a ReST API, so you can ask it to `/li
 - http://localhost:8778/jolokia/read/java.lang:type=Runtime/Name
 - http://localhost:8778/jolokia/read/kafka.controller:name=ActiveBrokerCount,type=KafkaController
 
+http://localhost:8778/jolokia/read/java.lang:type=GarbageCollector,*
+LastGcInfo
+
 Example Jolokia output for `ActiveBrokerCount` (returned as JSON):
 
 ```json
@@ -163,6 +166,30 @@ And of course, you can use a tool like `cURL` to gather those metrics too:
 ```bash
 curl -s localhost:8778/jolokia/list | python3 -m json.tool
 ```
+
+#### Using an HTTP POST Request with a JSON Payload
+
+```bash
+curl --json @payload.json  http://localhost:8778/jolokia/
+```
+
+Where an example payload is:
+
+```json
+[
+  {
+    "type" : "read",
+    "attribute" : "HeapMemoryUsage",
+    "mbean" : "java.lang:type=Memory",
+    "path" : "used"
+  },
+  {
+    "type" : "search",
+    "mbean" : "*:type=Memory,*"
+  }
+]
+```
+
 
 ## JMXTool
 

@@ -1,0 +1,1 @@
+{"request":{"mbean":"java.lang:type=GarbageCollector","type":"read"},"error_type":"javax.management.InstanceNotFoundException","error":"javax.management.InstanceNotFoundException : java.lang:type=GarbageCollector","status":404}
