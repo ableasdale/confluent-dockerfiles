@@ -1,0 +1,8 @@
+services:
+
+  broker:
+    image: krishnaconfluent/kafka-native:latest
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
