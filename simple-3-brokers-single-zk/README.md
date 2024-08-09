@@ -57,5 +57,29 @@ docker-compose exec broker1 kafka-topics --bootstrap-server broker1:9092 --topic
 1KB Record Size; 1 Million Records
 
 ```bash
-docker-compose exec broker1 kafka-producer-perf-test --throughput 500000 --num-records 1000000 --topic test-topic --record-size 1000 --producer-props bootstrap.server broker1:9092 acks=all linger.ms=100 batch.size=300000 compression-type=lz4 --print-metrics
+time docker-compose exec broker1 kafka-producer-perf-test --throughput 500000 --num-records 1000000 --topic test-topic --record-size 1024 --producer-props bootstrap.servers=broker1:9092 acks=all linger.ms=100 batch.size=300000 compression-type=lz4 --print-metrics
+```
+
+100KB Record Size; 1 Million Records
+
+```bash
+time docker-compose exec broker1 kafka-producer-perf-test --throughput 500000 --num-records 1000000 --topic test-topic --record-size 102400 --producer-props bootstrap.servers=broker1:9092 acks=all linger.ms=100 batch.size=300000 compression-type=lz4 --print-metrics
+```
+
+500KB Record Size; 1 Million Records
+
+```bash
+time docker-compose exec broker1 kafka-producer-perf-test --throughput 500000 --num-records 1000000 --topic test-topic --record-size 512000 --producer-props bootstrap.servers=broker1:9092 acks=all linger.ms=100 batch.size=300000 compression-type=lz4 --print-metrics
+```
+
+1MB Record Size; 1 Million Records
+
+```bash
+time docker-compose exec broker1 kafka-producer-perf-test --throughput 500000 --num-records 1000000 --topic test-topic --record-size 1024000 --producer-props bootstrap.servers=broker1:9092 acks=all linger.ms=100 batch.size=300000 compression-type=lz4 --print-metrics
+```
+
+5 MB Record Size; 1 Million Records
+
+```bash
+time docker-compose exec broker1 kafka-producer-perf-test --throughput 500000 --num-records 1000000 --topic test-topic --record-size 5120000 --producer-props bootstrap.servers=broker1:9092 acks=all linger.ms=100 batch.size=300000 compression-type=lz4 --print-metrics
 ```
