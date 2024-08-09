@@ -49,7 +49,13 @@ docker-compose exec broker1 kafka-topics --bootstrap-server broker1:9092 --descr
 We're going to create a topic and we're going to configure it with a larger `max.message.bytes` to test performance for messages of 5MB in size:
 
 ```bash
-docker-compose exec broker1 kafka-topics --bootstrap-server broker1:9092 --topic test-topic --replication-factor 3 --partitions 3 --create --config min.insync.replicas=2,max.message.bytes=5242880
+docker-compose exec broker1 kafka-topics --bootstrap-server broker1:9092 --topic test-topic --replication-factor 3 --partitions 3 --create --config min.insync.replicas=2 max.message.bytes=5242880
 ```
 
 ## Running Kafka Perf Test
+
+1KB Record Size; 1 Million Records
+
+```bash
+docker-compose exec broker1 kafka-producer-perf-test --bootstrap-server broker1:9092 --throughput 500000 --num-records 1000000 --topic test-topic --record-size 1000
+```
