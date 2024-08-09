@@ -29,6 +29,9 @@ services:
       KAFKA_CONFLUENT_METRICS_ENABLE: 'false'
       KAFKA_CONFLUENT_REPORTERS_TELEMETRY_AUTO_ENABLE: 'false'
       KAFKA_CONFLUENT_BALANCER_ENABLE: 'false'
+      # Configure for larger size messages
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 5242880
+      KAFKA_REPLICA_FETCH_RESPONSE_MAX_BYTES: 104857600
       
   broker2:
     image: confluentinc/cp-server:${CP_TAG}
@@ -50,6 +53,9 @@ services:
       KAFKA_CONFLUENT_METRICS_ENABLE: 'false'
       KAFKA_CONFLUENT_REPORTERS_TELEMETRY_AUTO_ENABLE: 'false'
       KAFKA_CONFLUENT_BALANCER_ENABLE: 'false'
+      # Configure for larger size messages
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 5242880
+      KAFKA_REPLICA_FETCH_RESPONSE_MAX_BYTES: 104857600
 
   broker3:
     image: confluentinc/cp-server:${CP_TAG}
@@ -71,6 +77,9 @@ services:
       KAFKA_CONFLUENT_METRICS_ENABLE: 'false'
       KAFKA_CONFLUENT_REPORTERS_TELEMETRY_AUTO_ENABLE: 'false'
       KAFKA_CONFLUENT_BALANCER_ENABLE: 'false'
+      # Configure for larger size messages
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 5242880
+      KAFKA_REPLICA_FETCH_RESPONSE_MAX_BYTES: 104857600
 
   control-center:
     image: confluentinc/cp-enterprise-control-center:${CP_TAG}
