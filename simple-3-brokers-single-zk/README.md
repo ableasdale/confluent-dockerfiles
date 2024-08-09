@@ -57,5 +57,5 @@ docker-compose exec broker1 kafka-topics --bootstrap-server broker1:9092 --topic
 1KB Record Size; 1 Million Records
 
 ```bash
-docker-compose exec broker1 kafka-producer-perf-test --bootstrap-server broker1:9092 --throughput 500000 --num-records 1000000 --topic test-topic --record-size 1000
+docker-compose exec broker1 kafka-producer-perf-test --throughput 500000 --num-records 1000000 --topic test-topic --record-size 1000 --producer-props bootstrap.server broker1:9092 acks=all linger.ms=100 batch.size=300000 compression-type=lz4 --print-metrics
 ```
