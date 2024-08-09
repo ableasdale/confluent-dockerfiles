@@ -30,4 +30,7 @@ done
 echo "Creating PEM File"
 cat ca-cert ca-key > ca.pem
 
+echo "Creating Client property file"
+
+
 echo "✅  All done."
