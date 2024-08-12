@@ -34,7 +34,6 @@ services:
       # Configure for larger size messages
       KAFKA_REPLICA_FETCH_MAX_BYTES: 5242880
       KAFKA_REPLICA_FETCH_RESPONSE_MAX_BYTES: 104857600
-      # Producer KAFKA_MAX_REQUEST_SIZE: 5242880
       KAFKA_MESSAGE_MAX_BYTES: 5242880
       
   broker2:
@@ -61,7 +60,6 @@ services:
       # Configure for larger size messages
       KAFKA_REPLICA_FETCH_MAX_BYTES: 5242880
       KAFKA_REPLICA_FETCH_RESPONSE_MAX_BYTES: 104857600
-      # KAFKA_MAX_REQUEST_SIZE: 5242880
       KAFKA_MESSAGE_MAX_BYTES: 5242880
 
   broker3:
@@ -88,7 +86,6 @@ services:
       # Configure for larger size messages
       KAFKA_REPLICA_FETCH_MAX_BYTES: 5242880
       KAFKA_REPLICA_FETCH_RESPONSE_MAX_BYTES: 104857600
-      # KAFKA_MAX_REQUEST_SIZE: 5242880
       KAFKA_MESSAGE_MAX_BYTES: 5242880
 
   control-center:
