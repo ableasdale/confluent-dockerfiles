@@ -34,6 +34,7 @@ services:
       # Configure for larger size messages
       KAFKA_REPLICA_FETCH_MAX_BYTES: 5242880
       KAFKA_REPLICA_FETCH_RESPONSE_MAX_BYTES: 104857600
+      KAFKA_MAX_REQUEST_SIZE: 5242880
       
   broker2:
     image: confluentinc/cp-server:${CP_TAG}
@@ -59,6 +60,7 @@ services:
       # Configure for larger size messages
       KAFKA_REPLICA_FETCH_MAX_BYTES: 5242880
       KAFKA_REPLICA_FETCH_RESPONSE_MAX_BYTES: 104857600
+      KAFKA_MAX_REQUEST_SIZE: 5242880
 
   broker3:
     image: confluentinc/cp-server:${CP_TAG}
@@ -84,6 +86,7 @@ services:
       # Configure for larger size messages
       KAFKA_REPLICA_FETCH_MAX_BYTES: 5242880
       KAFKA_REPLICA_FETCH_RESPONSE_MAX_BYTES: 104857600
+      KAFKA_MAX_REQUEST_SIZE: 5242880
 
   control-center:
     image: confluentinc/cp-enterprise-control-center:${CP_TAG}
