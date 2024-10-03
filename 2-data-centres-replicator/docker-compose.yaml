@@ -1,5 +1,4 @@
 ---
-version: '2'
 services:
 
   broker-dc1:
@@ -41,6 +40,10 @@ services:
       # Replace CLUSTER_ID with a unique base64 UUID using "bin/kafka-storage.sh random-uuid" 
       # See https://docs.confluent.io/kafka/operations-tools/kafka-tools.html#kafka-storage-sh
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      # Configure for larger size messages
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 5242880
+      KAFKA_REPLICA_FETCH_RESPONSE_MAX_BYTES: 104857600
+      KAFKA_MESSAGE_MAX_BYTES: 5242880
 
   broker-dc2:
     image: confluentinc/cp-server:${CP_TAG}
@@ -81,6 +84,10 @@ services:
       # Replace CLUSTER_ID with a unique base64 UUID using "bin/kafka-storage.sh random-uuid" 
       # See https://docs.confluent.io/kafka/operations-tools/kafka-tools.html#kafka-storage-sh
       CLUSTER_ID: 'AaB3OEVBNTcwNTJENDM2Qk'
+      # Configure for larger size messages
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 5242880
+      KAFKA_REPLICA_FETCH_RESPONSE_MAX_BYTES: 104857600
+      KAFKA_MESSAGE_MAX_BYTES: 5242880
 
   schema-registry-dc1:
     image: confluentinc/cp-schema-registry:${CP_TAG}
@@ -143,7 +150,7 @@ services:
       CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
       CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_PLUGIN_PATH: /usr/share/java
-      CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+      # CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
       # Confluent Monitoring Interceptors for Control Center Streams Monitoring
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_PRODUCER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: broker-dc2:29092
@@ -183,7 +190,7 @@ services:
       CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
       CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_PLUGIN_PATH: /usr/share/java
-      CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+      # CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
       # Confluent Monitoring Interceptors for Control Center Streams Monitoring
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_PRODUCER_CONFLUENT_MONITORING_INTERCEPTOR_BOOTSTRAP_SERVERS: broker-dc2:29092

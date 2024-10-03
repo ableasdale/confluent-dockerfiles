@@ -320,3 +320,41 @@ Access broker logs:
 ```bash
 docker logs broker-dc2
 ```
+
+### Support for Large(r) files
+
+Starting the containers:
+
+```bash
+docker compose up
+```
+
+Create our test topic:
+
+```bash
+docker compose exec broker-dc1 kafka-topics --create --bootstrap-server broker-dc1:29091 --topic sixth-test --replication-factor 1 --partitions 10
+```
+
+Creating some large (5MB) messages to ensure that replicator can safely handle them.
+
+```bash
+time docker compose exec broker-dc1 kafka-producer-perf-test --throughput 1000 --num-records 10 --topic test-topic --record-size 5120000 --producer-props bootstrap.servers=broker-dc1:29091 acks=all linger.ms=100 batch.size=1000 compression-type=lz4 max.request.size=5242880 --print-metrics
+```
+
+We want to see something like this in the output:
+
+```bash
+10 records sent, 7.204611 records/sec (35.18 MB/sec), 372.80 ms avg latency, 921.00 ms max latency, 329 ms 50th, 921 ms 95th, 921 ms 99th, 921 ms 99.9th.
+```
+
+Run replicator:
+
+```bash
+./sixth-test.sh
+```
+
+Check our target topic:
+
+```bash
+docker compose exec broker-dc2 kafka-console-consumer --bootstrap-server broker-dc2:29092 --from-beginning --topic sixth-test
+```
