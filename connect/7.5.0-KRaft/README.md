@@ -3,7 +3,7 @@
 Start the containers:
 
 ```bash
-docker-compose -d up
+docker compose up -d
 ```
 
 Wait for the ReST endpoint to become available:
@@ -33,7 +33,7 @@ Look for the line containing the `"cluster_id"` property:
 In later versions of Confluent Platform you can also run:
 
 ```bash
-docker-compose exec kafka kafka-cluster cluster-id --bootstrap-server kafka:29092
+docker compose exec broker kafka-cluster cluster-id --bootstrap-server broker:29092
 ```
 
 ## Replace the `<cluster-id>` with in the cURL statement below to create the source topic
@@ -168,4 +168,130 @@ more /etc/kafka/connect-distributed.properties
 
 ```bash
 docker logs -f connect --tail 10
+```
+
+---
+
+## Scenario: Handling Topic Resizing
+
+Start the containers:
+
+```bash
+docker compose up -d
+```
+
+Wait for the ReST endpoint to become available:
+
+```bash
+watch -d curl localhost:8083
+```
+
+When the endpoint is ready, you should see something similar to:
+
+```bash
+{"version":"7.5.0-ce","commit":"be816cdb62b83d78","kafka_cluster_id":"bTk1h9nGSAitTieoK2o7AA"}
+```
+
+Confirm the cluster id:
+
+```bash
+docker compose exec broker kafka-cluster cluster-id --bootstrap-server broker:29092
+```
+
+Create Source Topic (replace `<cluster-id>` with the cluster id):
+
+```bash
+curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" \
+          --data '{"topic_name": "dynamic-topic-resize", "partitions_count": 4, "replication_factor": 1}' \
+          "http://localhost:8082/v3/clusters/<cluster-id>/topics" | jq
+```
+
+Create Target Topic (replace `<cluster-id>` with the cluster id):
+
+```bash
+curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" \
+          --data '{"topic_name": "dynamic-topic-resize-replica", "partitions_count": 4, "replication_factor": 1}' \
+          "http://localhost:8082/v3/clusters/<cluster-id>/topics" | jq
+```
+
+### Create the Replicator instance
+
+```bash
+./create_dynamic_resize_replicator.sh
+```
+
+### Load 100000 Documents and confirm they are available on the replica
+
+```bash
+docker compose exec broker kafka-producer-perf-test --throughput -1 --num-records 100000 --topic dynamic-topic-resize --record-size 100 --producer-props bootstrap.servers=broker:29092 acks=all compression.type=lz4 batch.size=800000 linger.ms=100
+```
+
+### Consume from Destination
+
+Keep this running in a separate `terminal` window:
+
+```bash
+docker compose exec broker kafka-console-consumer --bootstrap-server broker:29092 --topic dynamic-topic-resize-replica --group dynamic-topic-resize-replica --from-beginning
+```
+
+List Consumer Groups (in another `terminal` window while the consumer is still active) and confirm that `dynamic-topic-resize-replica` is in the list:
+
+```bash
+docker compose exec broker kafka-consumer-groups --bootstrap-server broker:29092 --list
+```
+
+Get the latest offsets:
+
+```bash
+docker compose exec broker kafka-consumer-groups --bootstrap-server broker:29092 --describe --group dynamic-topic-resize-replica
+```
+
+Load more messages:
+
+```bash
+docker compose exec broker kafka-producer-perf-test --throughput -1 --num-records 100000 --topic dynamic-topic-resize --record-size 100 --producer-props bootstrap.servers=broker:29092 acks=all compression.type=lz4 batch.size=800000 linger.ms=100
+```
+
+Confirm offsets have been replicated:
+
+```bash
+docker compose exec broker kafka-consumer-groups --bootstrap-server broker:29092 --describe --group dynamic-topic-resize-replica
+```
+
+Resize `source` partition to increase the number of partitions:
+
+```bash
+docker compose exec broker kafka-topics --bootstrap-server broker:29092 --alter --topic dynamic-topic-resize --partitions 20
+```
+
+Confirm `source` partition now has 20 topics by running:
+
+```bash
+docker compose exec broker kafka-topics --bootstrap-server broker:29092 --describe --topic dynamic-topic-resize
+```
+
+Load more messages:
+
+```bash
+docker compose exec broker kafka-producer-perf-test --throughput -1 --num-records 2000000 --topic dynamic-topic-resize --record-size 100 --producer-props bootstrap.servers=broker:29092 acks=all compression.type=lz4 batch.size=800000 linger.ms=100
+```
+
+Confirm offsets have increased in the replica topic:
+
+```bash
+docker compose exec broker kafka-consumer-groups --bootstrap-server broker:29092 --describe --group dynamic-topic-resize-replica
+```
+
+## Notes Below
+
+Check Offsets:
+
+```bash
+docker compose exec broker kafka-console-consumer --from-beginning --topic __consumer_offsets --bootstrap-server broker:29092 --formatter "kafka.coordinator.group.GroupMetadataManager\$OffsetsMessageFormatter"
+```
+
+Cleanup:
+
+```bash
+docker compose down && docker container prune -f
 ```
