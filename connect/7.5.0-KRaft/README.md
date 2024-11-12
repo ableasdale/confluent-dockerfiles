@@ -192,26 +192,38 @@ When the endpoint is ready, you should see something similar to:
 {"version":"7.5.0-ce","commit":"be816cdb62b83d78","kafka_cluster_id":"bTk1h9nGSAitTieoK2o7AA"}
 ```
 
-Confirm the cluster id:
+Confirm the `cluster id`:
 
 ```bash
 docker compose exec broker kafka-cluster cluster-id --bootstrap-server broker:29092
 ```
 
-Create Source Topic (replace `<cluster-id>` with the cluster id):
+Create an Environment variable using the Cluster ID:
+
+```bash
+export CONFIG=`docker compose exec broker kafka-cluster cluster-id --bootstrap-server broker:29092 | cut -d " " -f3`
+```
+
+Confirm the `cluster id` is now resolvable using the `$CONFIG` variable with:
+
+```bash
+echo $CONFIG
+```
+
+Create Source Topic:
 
 ```bash
 curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" \
-          --data '{"topic_name": "dynamic-topic-resize", "partitions_count": 4, "replication_factor": 1}' \
-          "http://localhost:8082/v3/clusters/<cluster-id>/topics" | jq
+          --data '{"topic_name": "dynamic-topic-resize-x", "partitions_count": 4, "replication_factor": 1}' \
+          "http://localhost:8082/v3/clusters/$CONFIG/topics" | jq
 ```
 
-Create Target Topic (replace `<cluster-id>` with the cluster id):
+Create Target Topic:
 
 ```bash
 curl -X POST -H "Content-Type: application/json" -H "Accept: application/json" \
           --data '{"topic_name": "dynamic-topic-resize-replica", "partitions_count": 4, "replication_factor": 1}' \
-          "http://localhost:8082/v3/clusters/<cluster-id>/topics" | jq
+          "http://localhost:8082/v3/clusters/$CONFIG/topics" | jq
 ```
 
 ### Create the Replicator instance
@@ -294,4 +306,10 @@ Cleanup:
 
 ```bash
 docker compose down && docker container prune -f
+```
+
+Debug:
+
+```bash
+docker logs connect -f
 ```
